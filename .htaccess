@@ -1,0 +1,35 @@
+RewriteEngine On
+
+
+# API Routes
+RewriteRule ^api/auth/register/?$ api/auth/register.php [L,QSA]
+RewriteRule ^api/auth/login/?$ api/auth/login.php [L,QSA]
+RewriteRule ^api/2fa/setup/?$ api/2fa/setup.php [L,QSA]
+RewriteRule ^api/2fa/verify-setup/?$ api/2fa/verify-setup.php [L,QSA]
+RewriteRule ^api/2fa/verify/?$ api/2fa/verify.php [L,QSA]
+RewriteRule ^api/2fa/reset-request/?$ api/2fa/reset-request.php [L,QSA]
+RewriteRule ^api/2fa/reset-verify/?$ api/2fa/reset-verify.php [L,QSA]
+RewriteRule ^api/2fa/TOTP-confirm/?$ api/2fa/TOTP-confirm.php [L,QSA]
+RewriteRule ^api/elevator/organizations/?$ api/elevator/organizations.php [L,QSA]
+RewriteRule ^api/elevator/buildings/?$ api/elevator/buildings.php [L,QSA]
+RewriteRule ^api/elevator/lifts/?$ api/elevator/lifts.php [L,QSA]
+
+RewriteRule ^api/endpoints/add_call/?$ api/endpoints/add_call.php [L,QSA]
+RewriteRule ^api/endpoints/get_call_read/?$ api/endpoints/get_call_read.php [L,QSA]
+RewriteRule ^api/endpoints/get_call/?$ api/endpoints/get_call.php [L,QSA]
+RewriteRule ^api/endpoints/get_status_db/?$ api/endpoints/get_status_db.php [L,QSA]
+RewriteRule ^api/endpoints/get_status_redis/?$ api/endpoints/get_status_redis.php [L,QSA]
+RewriteRule ^api/endpoints/get_status/?$ api/endpoints/get_status.php [L,QSA]
+RewriteRule ^api/endpoints/set_status_db/?$ api/endpoints/set_status_db.php [L,QSA]
+RewriteRule ^api/endpoints/set_status_redis/?$ api/endpoints/set_status_redis.php [L,QSA]
+RewriteRule ^api/endpoints/set_status/?$ api/endpoints/set_status.php [L,QSA]
+
+RewriteRule ^api/user/profile/?$ api/user/profile.php [L,QSA]
+
+RewriteRule ^api/admin/users/?$ api/admin/users.php [L,QSA]
+RewriteRule ^api/admin/reset-2fa/?$ api/admin/reset-2fa.php [L,QSA]
+
+# Default to index.php for API documentation
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L,QSA]
