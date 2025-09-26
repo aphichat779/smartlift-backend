@@ -9,10 +9,10 @@ class Database {
     public $conn;
 
     // ------------------- Redis Config -------------------
-    private $redis_host = "52.221.67.113";
-    private $redis_port = 6379;
-    private $redis_auth = "kuse@fse2023";
-    public $redis;
+    // private $redis_host = "52.221.67.113";
+    // private $redis_port = 6379;
+    // private $redis_auth = "kuse@fse2023";
+    // public $redis;
 
     // ------------------- MySQL Connection -------------------
     public function getConnection() {
@@ -32,16 +32,16 @@ class Database {
     }
 
     // ------------------- Redis Connection -------------------
-    public function getRedis() {
-        $this->redis = null;
-        try {
-            $this->redis = new Redis();
-            $this->redis->connect($this->redis_host, $this->redis_port, 2.5);
-            $this->redis->auth($this->redis_auth);
-        } catch(Exception $e) {
-            echo "Redis Connection error: " . $e->getMessage();
-        }
-        return $this->redis;
-    }
+    // public function getRedis() {
+    //     $this->redis = null;
+    //     try {
+    //         $this->redis = new Redis();
+    //         $this->redis->connect($this->redis_host, $this->redis_port, 2.5);
+    //         $this->redis->auth($this->redis_auth);
+    //     } catch(Exception $e) {
+    //         echo "Redis Connection error: " . $e->getMessage();
+    //     }
+    //     return $this->redis;
+    // }
 }
 ?>
