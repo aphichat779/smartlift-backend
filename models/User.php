@@ -255,9 +255,10 @@ class User
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
     // เพิ่ม method สำหรับแก้ไขบทบาท
-    public function updateRole($id, $role) {
+    public function updateRole($id, $role)
+    {
         $query = "UPDATE " . $this->table_name . " SET role = :role WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':role', $role);
@@ -266,7 +267,8 @@ class User
     }
 
     // เพิ่ม method สำหรับเปิด/ปิดสถานะบัญชี
-    public function toggleActiveStatus($id, $is_active) {
+    public function toggleActiveStatus($id, $is_active)
+    {
         $query = "UPDATE " . $this->table_name . " SET is_active = :is_active WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':is_active', $is_active);
@@ -319,5 +321,25 @@ class User
             'is_active' => $this->is_active // เพิ่ม is_active
         ];
     }
+
+    public function countAll(): int
+    {
+        $sql = "SELECT COUNT(*) AS c FROM users";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)$row['c'];
+    }
+
+    public function updateUserOrg(int $userId, int $orgId): bool
+    {
+        // ตรวจว่ามี org นี้จริง
+        $check = $this->conn->prepare("SELECT id FROM organizations WHERE id = :org_id");
+        $check->execute([':org_id' => $orgId]);
+        if (!$check->fetch(PDO::FETCH_ASSOC)) return false;
+
+        $sql = "UPDATE users SET org_id = :org_id WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([':org_id' => $orgId, ':id' => $userId]);
+    }
 }
-?>

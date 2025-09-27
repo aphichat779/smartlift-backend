@@ -30,9 +30,9 @@ try {
             if ($building_id) {
                 // ดึงข้อมูลอาคารตาม ID
                 $query = "SELECT b.*, o.org_name 
-                         FROM building b 
-                         LEFT JOIN organizations o ON b.org_id = o.id 
-                         WHERE b.id = ?";
+                          FROM buildings b 
+                          LEFT JOIN organizations o ON b.org_id = o.id 
+                          WHERE b.id = ?";
                 $stmt = $db->prepare($query);
                 $stmt->execute([$building_id]);
                 $building = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -56,18 +56,18 @@ try {
                 if ($org_id) {
                     // ดึงอาคารตาม org_id ที่ระบุ
                     $query = "SELECT b.*, o.org_name 
-                             FROM building b 
-                             LEFT JOIN organizations o ON b.org_id = o.id 
-                             WHERE b.org_id = ? 
-                             ORDER BY b.building_name";
+                              FROM buildings b 
+                              LEFT JOIN organizations o ON b.org_id = o.id 
+                              WHERE b.org_id = ? 
+                              ORDER BY b.building_name";
                     $stmt = $db->prepare($query);
                     $stmt->execute([$org_id]);
                 } else {
                     // ดึงอาคารทั้งหมด
                     $query = "SELECT b.*, o.org_name 
-                             FROM building b 
-                             LEFT JOIN organizations o ON b.org_id = o.id 
-                             ORDER BY o.org_name, b.building_name";
+                              FROM buildings b 
+                              LEFT JOIN organizations o ON b.org_id = o.id 
+                              ORDER BY o.org_name, b.building_name";
                     $stmt = $db->prepare($query);
                     $stmt->execute();
                 }
@@ -90,12 +90,11 @@ try {
             // เพิ่มอาคารใหม่ (ต้อง authentication)
             $user = AuthMiddleware::authenticate();
             if (!$user) {
-                exit(); // AuthMiddleware จะส่ง response แล้ว
+                exit();
             }
             
             $input = json_decode(file_get_contents('php://input'), true);
             
-            // Check if JSON decode was successful
             if (json_last_error() !== JSON_ERROR_NONE) {
                 http_response_code(400);
                 echo json_encode([
@@ -105,7 +104,6 @@ try {
                 exit();
             }
             
-            // Validate required fields
             $required_fields = ['org_id', 'building_name'];
             foreach ($required_fields as $field) {
                 if (!isset($input[$field]) || empty(trim($input[$field]))) {
@@ -118,7 +116,6 @@ try {
                 }
             }
             
-            // Check if organization exists
             $checkOrgQuery = "SELECT id FROM organizations WHERE id = ?";
             $checkOrgStmt = $db->prepare($checkOrgQuery);
             $checkOrgStmt->execute([$input['org_id']]);
@@ -132,8 +129,7 @@ try {
                 exit();
             }
             
-            // Check if building name already exists in the same organization
-            $checkQuery = "SELECT id FROM building WHERE building_name = ? AND org_id = ?";
+            $checkQuery = "SELECT id FROM buildings WHERE building_name = ? AND org_id = ?";
             $checkStmt = $db->prepare($checkQuery);
             $checkStmt->execute([trim($input['building_name']), $input['org_id']]);
             
@@ -146,8 +142,8 @@ try {
                 exit();
             }
             
-            $query = "INSERT INTO building (org_id, building_name, description, address, created_at, updated_at) 
-                     VALUES (?, ?, ?, ?, NOW(), NOW())";
+            $query = "INSERT INTO buildings (org_id, building_name, description, address, created_at, updated_at) 
+                      VALUES (?, ?, ?, ?, NOW(), NOW())";
             $stmt = $db->prepare($query);
             $result = $stmt->execute([
                 $input['org_id'],
@@ -176,12 +172,11 @@ try {
             // แก้ไขข้อมูลอาคาร (ต้อง authentication)
             $user = AuthMiddleware::authenticate();
             if (!$user) {
-                exit(); // AuthMiddleware จะส่ง response แล้ว
+                exit();
             }
             
             $input = json_decode(file_get_contents('php://input'), true);
             
-            // Check if JSON decode was successful
             if (json_last_error() !== JSON_ERROR_NONE) {
                 http_response_code(400);
                 echo json_encode([
@@ -202,8 +197,7 @@ try {
             
             $building_id = (int)$input['id'];
             
-            // Check if building exists
-            $checkQuery = "SELECT id, org_id FROM building WHERE id = ?";
+            $checkQuery = "SELECT id, org_id FROM buildings WHERE id = ?";
             $checkStmt = $db->prepare($checkQuery);
             $checkStmt->execute([$building_id]);
             $existingBuilding = $checkStmt->fetch(PDO::FETCH_ASSOC);
@@ -217,7 +211,6 @@ try {
                 exit();
             }
             
-            // Check if organization exists (if org_id is being updated)
             if (isset($input['org_id'])) {
                 $checkOrgQuery = "SELECT id FROM organizations WHERE id = ?";
                 $checkOrgStmt = $db->prepare($checkOrgQuery);
@@ -233,10 +226,9 @@ try {
                 }
             }
             
-            // Check if building name already exists (exclude current building)
             if (isset($input['building_name']) && !empty(trim($input['building_name']))) {
                 $org_id_to_check = isset($input['org_id']) ? $input['org_id'] : $existingBuilding['org_id'];
-                $checkNameQuery = "SELECT id FROM building WHERE building_name = ? AND org_id = ? AND id != ?";
+                $checkNameQuery = "SELECT id FROM buildings WHERE building_name = ? AND org_id = ? AND id != ?";
                 $checkNameStmt = $db->prepare($checkNameQuery);
                 $checkNameStmt->execute([trim($input['building_name']), $org_id_to_check, $building_id]);
                 
@@ -250,7 +242,6 @@ try {
                 }
             }
             
-            // Build update query dynamically
             $updateFields = [];
             $params = [];
             
@@ -280,7 +271,7 @@ try {
             $updateFields[] = "updated_at = NOW()";
             $params[] = $building_id;
             
-            $query = "UPDATE building SET " . implode(", ", $updateFields) . " WHERE id = ?";
+            $query = "UPDATE buildings SET " . implode(", ", $updateFields) . " WHERE id = ?";
             $stmt = $db->prepare($query);
             $result = $stmt->execute($params);
             
@@ -302,7 +293,7 @@ try {
             // ลบอาคาร (ต้อง authentication)
             $user = AuthMiddleware::authenticate();
             if (!$user) {
-                exit(); // AuthMiddleware จะส่ง response แล้ว
+                exit();
             }
             
             $building_id = isset($_GET['id']) ? (int)$_GET['id'] : null;
@@ -316,8 +307,7 @@ try {
                 exit();
             }
             
-            // Check if building exists
-            $checkQuery = "SELECT id FROM building WHERE id = ?";
+            $checkQuery = "SELECT id FROM buildings WHERE id = ?";
             $checkStmt = $db->prepare($checkQuery);
             $checkStmt->execute([$building_id]);
             
@@ -330,7 +320,6 @@ try {
                 exit();
             }
             
-            // Check if building has lifts
             $checkLiftsQuery = "SELECT COUNT(*) as count FROM lifts WHERE building_id = ?";
             $checkLiftsStmt = $db->prepare($checkLiftsQuery);
             $checkLiftsStmt->execute([$building_id]);
@@ -345,7 +334,7 @@ try {
                 exit();
             }
             
-            $query = "DELETE FROM building WHERE id = ?";
+            $query = "DELETE FROM buildings WHERE id = ?";
             $stmt = $db->prepare($query);
             $result = $stmt->execute([$building_id]);
             
@@ -380,4 +369,3 @@ try {
     ]);
 }
 ?>
-

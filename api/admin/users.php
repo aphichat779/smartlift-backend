@@ -13,23 +13,20 @@ CORSMiddleware::handle();
 try {
     // Require admin authentication
     $authUser = AuthMiddleware::requireAdmin();
-    if (!$authUser) {
-        exit;
-    }
-    
+    if (!$authUser) { exit; }
+
     $database = new Database();
     $db = $database->getConnection();
-    
     $user = new User($db);
-    
+
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-        // Get all users
-        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+        $page  = isset($_GET['page'])  ? max(1, (int)$_GET['page'])  : 1;
+        $limit = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 20;
         $offset = ($page - 1) * $limit;
-        
+
         $users = $user->getAllUsers($limit, $offset);
-        
+        $total = $user->countAll(); // <-- ต้องมี method นี้ใน models/User.php
+
         http_response_code(200);
         echo json_encode([
             'success' => true,
@@ -37,37 +34,39 @@ try {
             'pagination' => [
                 'page' => $page,
                 'limit' => $limit,
-                'total' => count($users)
+                'total' => (int)$total
             ]
         ]);
-        
-    } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // รับค่า JSON จาก Body ของ Request
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = json_decode(file_get_contents("php://input"));
-        
-        // ตรวจสอบว่ามี user_id และ action ส่งมาหรือไม่
+
         if (!isset($data->user_id) || !isset($data->action)) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'ข้อมูลไม่ครบถ้วน: user_id และ action จำเป็นต้องมี']);
+            echo json_encode(['success' => false, 'message' => 'ข้อมูลไม่ครบ: ต้องมี user_id และ action']);
             exit;
         }
 
-        $userIdToUpdate = $data->user_id;
-        $action = $data->action;
+        $userIdToUpdate = (int)$data->user_id;
+        $action = (string)$data->action;
 
-        // ป้องกันไม่ให้ admin แก้ไขบัญชีของตัวเอง
-        if ($authUser['id'] == $userIdToUpdate) {
+        // ห้ามแก้บัญชีตัวเอง
+        if ((int)$authUser['id'] === $userIdToUpdate) {
             http_response_code(403);
-            echo json_encode(['success' => false, 'message' => 'คุณไม่สามารถแก้ไขบัญชีของตัวเองได้']);
+            echo json_encode(['success' => false, 'message' => 'ไม่สามารถแก้ไขบัญชีของตัวเองได้']);
             exit;
         }
-        
+
         if ($action === 'update_role') {
-            if (!isset($data->role) || !in_array($data->role, ['admin', 'technician', 'user'])) {
+            $allowedRoles = ['admin','technician','user']; // ปรับตามที่คุณใช้งานจริง
+            if (!isset($data->role) || !in_array($data->role, $allowedRoles, true)) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'บทบาทไม่ถูกต้อง']);
                 exit;
             }
+
             if ($user->updateRole($userIdToUpdate, $data->role)) {
                 http_response_code(200);
                 echo json_encode(['success' => true, 'message' => 'แก้ไขบทบาทสำเร็จ']);
@@ -75,28 +74,50 @@ try {
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'ไม่สามารถแก้ไขบทบาทได้']);
             }
-        } elseif ($action === 'toggle_status') {
+            exit;
+        }
+
+        if ($action === 'toggle_status') {
             if (!isset($data->is_active)) {
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'ข้อมูลสถานะไม่ครบถ้วน']);
                 exit;
             }
-            if ($user->toggleActiveStatus($userIdToUpdate, $data->is_active)) {
+            $isActive = (int)!!$data->is_active;
+            if ($user->toggleActiveStatus($userIdToUpdate, $isActive)) {
                 http_response_code(200);
                 echo json_encode(['success' => true, 'message' => 'เปลี่ยนสถานะบัญชีสำเร็จ']);
             } else {
                 http_response_code(500);
                 echo json_encode(['success' => false, 'message' => 'ไม่สามารถเปลี่ยนสถานะบัญชีได้']);
             }
-        } else {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'คำสั่งไม่ถูกต้อง']);
+            exit;
         }
-    } else {
-        http_response_code(405);
-        echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+
+        // (ตัวเลือก) โยกผู้ใช้อยู่ในองค์กรใหม่
+        if ($action === 'update_user_org') {
+            if (!isset($data->org_id) || !is_numeric($data->org_id)) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'org_id ไม่ถูกต้อง']);
+                exit;
+            }
+            if ($user->updateUserOrg($userIdToUpdate, (int)$data->org_id)) {
+                http_response_code(200);
+                echo json_encode(['success' => true, 'message' => 'อัปเดตองค์กรของผู้ใช้สำเร็จ']);
+            } else {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'ไม่สามารถอัปเดตองค์กรของผู้ใช้ได้']);
+            }
+            exit;
+        }
+
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'คำสั่งไม่ถูกต้อง']);
+        exit;
     }
-    
+
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
@@ -105,4 +126,3 @@ try {
         'error_code' => 'SERVER_ERROR'
     ]);
 }
-?>

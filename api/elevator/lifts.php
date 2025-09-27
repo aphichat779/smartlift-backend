@@ -38,10 +38,10 @@ try {
             if ($lift_id) {
                 // ดึงข้อมูลลิฟต์ตาม ID
                 $query = "SELECT l.*, o.org_name, b.building_name 
-                         FROM lifts l 
-                         LEFT JOIN organizations o ON l.org_id = o.id 
-                         LEFT JOIN building b ON l.building_id = b.id 
-                         WHERE l.id = ?";
+                          FROM lifts l 
+                          LEFT JOIN organizations o ON l.org_id = o.id 
+                          LEFT JOIN buildings b ON l.building_id = b.id 
+                          WHERE l.id = ?";
                 $stmt = $db->prepare($query);
                 $stmt->execute([$lift_id]);
                 $lift = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -81,11 +81,11 @@ try {
                 $whereClause = !empty($whereConditions) ? "WHERE " . implode(" AND ", $whereConditions) : "";
                 
                 $query = "SELECT l.*, o.org_name, b.building_name 
-                         FROM lifts l 
-                         LEFT JOIN organizations o ON l.org_id = o.id 
-                         LEFT JOIN building b ON l.building_id = b.id 
-                         $whereClause
-                         ORDER BY o.org_name, b.building_name, l.lift_name";
+                          FROM lifts l 
+                          LEFT JOIN organizations o ON l.org_id = o.id 
+                          LEFT JOIN buildings b ON l.building_id = b.id 
+                          $whereClause
+                          ORDER BY o.org_name, b.building_name, l.lift_name";
                 
                 $stmt = $db->prepare($query);
                 $stmt->execute($params);
@@ -138,9 +138,9 @@ try {
             }
             
             $query = "INSERT INTO lifts (
-                        org_id, building_id, lift_name, max_level, mac_address, 
-                        floor_name, description, lift_state, up_status, down_status, 
-                        car_status, created_user_id, created_at, updated_user_id, updated_at
+                          org_id, building_id, lift_name, max_level, mac_address, 
+                          floor_name, description, lift_state, up_status, down_status, 
+                          car_status, created_user_id, created_at, updated_user_id, updated_at
                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW())";
             
             $stmt = $db->prepare($query);
@@ -328,4 +328,3 @@ try {
     ]);
 }
 ?>
-

@@ -88,7 +88,7 @@ try {
     $user->birthdate = $data['birthdate'];
     $user->address = $data['address'];
     $user->role = 'user'; // Default role
-    $user->org_id = 1; // Default organization
+    $user->org_id = null; // Default organization
     $user->recovery_email = $data['recovery_email'] ?? $data['email'];
     $user->recovery_phone = $data['recovery_phone'] ?? $data['phone'];
     
