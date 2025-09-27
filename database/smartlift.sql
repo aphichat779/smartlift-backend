@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 26, 2025 at 02:27 PM
+-- Generation Time: Sep 27, 2025 at 11:59 AM
 -- Server version: 5.7.24
 -- PHP Version: 8.3.1
 
@@ -54,6 +54,22 @@ CREATE TABLE `backup_codes` (
   `created_at` datetime NOT NULL,
   `used_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `backup_codes`
+--
+
+INSERT INTO `backup_codes` (`id`, `user_id`, `code`, `is_used`, `created_at`, `used_at`) VALUES
+(1, 1, '4FC0BD2C30', 0, '2025-09-27 00:05:37', NULL),
+(2, 1, '7296462124', 0, '2025-09-27 00:05:37', NULL),
+(3, 1, 'FFC02C4A55', 0, '2025-09-27 00:05:37', NULL),
+(4, 1, 'EF8F4F1B76', 0, '2025-09-27 00:05:37', NULL),
+(5, 1, '842A2A02F1', 0, '2025-09-27 00:05:37', NULL),
+(6, 1, '8209C08029', 0, '2025-09-27 00:05:37', NULL),
+(7, 1, 'B911478F05', 0, '2025-09-27 00:05:37', NULL),
+(8, 1, '4B6B3EF895', 0, '2025-09-27 00:05:37', NULL),
+(9, 1, 'C468E448F6', 0, '2025-09-27 00:05:37', NULL),
+(10, 1, 'CB8A27A8AF', 0, '2025-09-27 00:05:37', NULL);
 
 -- --------------------------------------------------------
 
@@ -199,6 +215,13 @@ CREATE TABLE `report` (
   `detail` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Dumping data for table `report`
+--
+
+INSERT INTO `report` (`rp_id`, `date_rp`, `user_id`, `org_id`, `building_id`, `lift_id`, `detail`) VALUES
+(1, '2025-09-27', 3, 1, 4, 8, '[STA:OPEN] [URG:MEDIUM] - ระบบ Overload แจ้งเตือนผิดปกติ');
+
 -- --------------------------------------------------------
 
 --
@@ -321,7 +344,7 @@ CREATE TABLE `users` (
   `role` varchar(255) NOT NULL,
   `ga_secret_key` varchar(255) DEFAULT NULL COMMENT 'Authenticator secret key',
   `ga_enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0=Disabled, 1=Enabled for Authenticator',
-  `org_id` int(11) NOT NULL,
+  `org_id` int(11) DEFAULT NULL,
   `user_img` varchar(255) DEFAULT NULL COMMENT 'URL of the user profile image',
   `recovery_email` varchar(255) DEFAULT NULL COMMENT 'Email สำหรับกู้คืน (อาจต่างจาก email หลัก)',
   `recovery_phone` varchar(20) DEFAULT NULL COMMENT 'Phone สำหรับกู้คืน',
@@ -336,7 +359,12 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `first_name`, `last_name`, `email`, `phone`, `birthdate`, `address`, `role`, `ga_secret_key`, `ga_enabled`, `org_id`, `user_img`, `recovery_email`, `recovery_phone`, `last_2fa_reset`, `failed_2fa_attempts`, `locked_until`, `is_active`) VALUES
-(1, 'Admin12345', '$2y$10$0UGatAbMAO.c0Wb2yF1iJu6LBWRYJaOJxUt/60CZHM0fv.Yqv0xgq', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-22', '123 asdfgrdcf', 'user', NULL, 0, 1, '/uploads/profile_images/68d580b39c9b06.83776048.jpg', '', '', NULL, 0, NULL, 1);
+(1, 'Admin12345', '$2y$10$0UGatAbMAO.c0Wb2yF1iJu6LBWRYJaOJxUt/60CZHM0fv.Yqv0xgq', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-22', '123 asdfgrdcf', 'admin', '6EPSJCDRKPYRBWWE', 1, 1, '/uploads/profile_images/68d580b39c9b06.83776048.jpg', '', '', NULL, 0, NULL, 1),
+(2, 'Aphichat123', '$2y$10$1l2iqxYhaZ2SI5QYmxtgyOWA01dOwWTzmcWtijksyfQnD464wbdRW', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', '123 asdfgrdcf', 'technician', NULL, 0, 3, NULL, '', '', NULL, 0, NULL, 1),
+(3, 'User1234', '$2y$10$wm3TjKw9sT8NAtJqhNKUUO4ux20rjzlCx4n/MpFZU8UFCKEgrj7ii', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', 'Asdr77980', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
+(4, 'User5678', '$2y$10$RnNH/3aeh7keCDxChfQFN..PgFZ.gbflowj79Y7LIym0BsHFjw1Oq', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', '1234abcde', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
+(5, 'User8910', '$2y$10$/MIiMsOA9SI//IMHSR7bWugnKnnehUuOj31GF.qDwJrO8nP18DmX.', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', 'Asdr77980', 'user', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1),
+(6, 'Tech1234', '$2y$10$peB89GBOnWhOgTu4Qb03mOj3b6tbgYefj/68aLj9ZbcLPrpRONMqy', 'Tech', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', 'Asdr77980', 'technician', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -378,7 +406,8 @@ ALTER TABLE `lifts`
 -- Indexes for table `organizations`
 --
 ALTER TABLE `organizations`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `ux_organizations_org_name` (`org_name`);
 
 --
 -- Indexes for table `otp_tokens`
@@ -461,7 +490,7 @@ ALTER TABLE `work`
 -- AUTO_INCREMENT for table `backup_codes`
 --
 ALTER TABLE `backup_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `buildings`
@@ -497,7 +526,7 @@ ALTER TABLE `recovery_otps`
 -- AUTO_INCREMENT for table `report`
 --
 ALTER TABLE `report`
-  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `status_logs`
@@ -539,7 +568,7 @@ ALTER TABLE `twofa_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `work`
