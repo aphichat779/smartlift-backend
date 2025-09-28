@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 27, 2025 at 11:59 AM
+-- Generation Time: Sep 28, 2025 at 06:18 PM
 -- Server version: 5.7.24
 -- PHP Version: 8.3.1
 
@@ -220,7 +220,10 @@ CREATE TABLE `report` (
 --
 
 INSERT INTO `report` (`rp_id`, `date_rp`, `user_id`, `org_id`, `building_id`, `lift_id`, `detail`) VALUES
-(1, '2025-09-27', 3, 1, 4, 8, '[STA:OPEN] [URG:MEDIUM] - ระบบ Overload แจ้งเตือนผิดปกติ');
+(7, '2025-09-28', 1, 2, 2, 2, '- ไฟชั้นแสดงผลผิดพลาด [URG:MEDIUM] [STA:OPEN]'),
+(8, '2025-09-28', 6, 1, 4, 8, '- ระบบ Overload แจ้งเตือนผิดปกติ [URG:MEDIUM] [STA:OPEN]'),
+(9, '2025-09-28', 1, 3, 3, 3, '- ปุ่มกดภายในไม่ทำงาน [URG:MEDIUM] [STA:OPEN]'),
+(10, '2025-09-28', 1, 3, 3, 7, '- ปุ่มกดภายในไม่ทำงาน [URG:MEDIUM] [STA:OPEN]');
 
 -- --------------------------------------------------------
 
@@ -249,7 +252,6 @@ CREATE TABLE `status_logs` (
 
 CREATE TABLE `task` (
   `tk_id` int(11) NOT NULL,
-  `tk_status` enum('1','2','3','4','5') NOT NULL,
   `tk_data` varchar(255) NOT NULL,
   `task_start_date` datetime DEFAULT NULL,
   `rp_id` int(11) NOT NULL,
@@ -259,8 +261,19 @@ CREATE TABLE `task` (
   `org_name` varchar(255) NOT NULL,
   `building_name` varchar(255) NOT NULL,
   `lift_id` varchar(255) NOT NULL,
-  `tools` longtext NOT NULL
+  `tools` longtext NOT NULL,
+  `tk_status` enum('assign','preparing','progress','test','complete') NOT NULL DEFAULT 'assign'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `task`
+--
+
+INSERT INTO `task` (`tk_id`, `tk_data`, `task_start_date`, `rp_id`, `user_id`, `user`, `mainten_id`, `org_name`, `building_name`, `lift_id`, `tools`, `tk_status`) VALUES
+(5, '', NULL, 7, 6, 'Tech1234', 6, 'SNKTC', 'อาคาร 1 เทคนิคสกล', '2', '[]', 'complete'),
+(6, '', NULL, 8, 6, 'Tech1234', 6, 'KU CSC', 'อาคาร 1', '8', '[]', 'progress'),
+(7, '', NULL, 10, 6, 'Tech1234', 6, 'PSU', 'อาคารเย็นศิระ', '7', '[]', 'assign'),
+(8, '', NULL, 9, 6, 'Tech1234', 6, 'PSU', 'อาคารเย็นศิระ', '3', '[]', 'progress');
 
 -- --------------------------------------------------------
 
@@ -271,13 +284,38 @@ CREATE TABLE `task` (
 CREATE TABLE `task_status` (
   `tk_status_id` int(11) NOT NULL,
   `tk_id` int(11) NOT NULL,
-  `status` enum('preparing','working','finish','prepared','assign') NOT NULL,
+  `status` enum('assign','preparing','progress','test','complete') NOT NULL,
   `time` datetime NOT NULL,
   `detail` varchar(255) NOT NULL,
   `tk_status_tool` longtext,
   `tk_img` longblob,
   `section` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `task_status`
+--
+
+INSERT INTO `task_status` (`tk_status_id`, `tk_id`, `status`, `time`, `detail`, `tk_status_tool`, `tk_img`, `section`) VALUES
+(12, 5, 'assign', '2025-09-28 21:05:17', 'Assigned by admin', NULL, NULL, 'assignment'),
+(13, 5, 'progress', '2025-09-28 21:05:29', 'Technician accepted the task.', NULL, NULL, 'progress'),
+(14, 5, 'progress', '2025-09-28 21:06:08', 'qwqefqad', '/uploads/task_status/20250928140608_86475819_7.png', NULL, 'progress'),
+(15, 5, 'progress', '2025-09-28 21:24:59', 'ๅ/-ๅ-ๅ-ๅ-ๅ', NULL, NULL, 'progress'),
+(16, 5, 'progress', '2025-09-28 21:25:30', 'ๅ/-ภหดแฟกหเอดฟำเฟำ', '/uploads/task_status/20250928142530_d5aa2734_Screenshot 2025-08-01 233535.png', NULL, 'progress'),
+(17, 5, 'test', '2025-09-28 21:33:26', '', NULL, NULL, 'progress'),
+(18, 5, 'complete', '2025-09-28 21:36:22', '', NULL, NULL, 'progress'),
+(19, 6, 'assign', '2025-09-28 21:39:14', 'Assigned by admin', NULL, NULL, 'assignment'),
+(20, 6, 'progress', '2025-09-28 21:39:19', 'Technician accepted the task.', NULL, NULL, 'progress'),
+(21, 7, 'assign', '2025-09-28 21:40:19', 'Assigned by admin', NULL, NULL, 'assignment'),
+(22, 8, 'assign', '2025-09-28 21:40:23', 'Assigned by admin', NULL, NULL, 'assignment'),
+(23, 7, 'assign', '2025-09-28 21:52:07', 'Technician accepted (confirm assign).', NULL, NULL, 'progress'),
+(24, 7, 'assign', '2025-09-28 21:53:21', 'Technician accepted (confirm assign).', NULL, NULL, 'progress'),
+(25, 7, 'assign', '2025-09-28 21:53:38', 'Technician accepted (confirm assign).', NULL, NULL, 'progress'),
+(26, 7, 'assign', '2025-09-28 22:05:41', 'Technician accepted (confirm assign).', NULL, NULL, 'progress'),
+(27, 8, 'preparing', '2025-09-28 22:12:55', 'Technician accepted → preparing.', NULL, NULL, 'progress'),
+(28, 8, 'preparing', '2025-09-28 22:14:11', 'เตรียมเครื่องมือ', '/uploads/task_status/20250928151411_026e6766_Screenshot 2025-08-28 172059.png', NULL, 'progress'),
+(29, 8, 'progress', '2025-09-28 22:43:39', '', '/uploads/task_status/20250928154339_9fca7770_Screenshot 2025-08-03 234051.png', NULL, 'progress'),
+(30, 8, 'progress', '2025-09-28 22:55:35', '', '/uploads/task_status/20250928155535_3ebbafe8_Screenshot 2025-08-01 224847.png', NULL, 'progress');
 
 -- --------------------------------------------------------
 
@@ -364,7 +402,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `first_name`, `last_name`, `e
 (3, 'User1234', '$2y$10$wm3TjKw9sT8NAtJqhNKUUO4ux20rjzlCx4n/MpFZU8UFCKEgrj7ii', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', 'Asdr77980', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
 (4, 'User5678', '$2y$10$RnNH/3aeh7keCDxChfQFN..PgFZ.gbflowj79Y7LIym0BsHFjw1Oq', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', '1234abcde', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
 (5, 'User8910', '$2y$10$/MIiMsOA9SI//IMHSR7bWugnKnnehUuOj31GF.qDwJrO8nP18DmX.', 'Aphichat', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', 'Asdr77980', 'user', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1),
-(6, 'Tech1234', '$2y$10$peB89GBOnWhOgTu4Qb03mOj3b6tbgYefj/68aLj9ZbcLPrpRONMqy', 'Tech', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', 'Asdr77980', 'technician', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1);
+(6, 'Tech1234', '$2y$10$peB89GBOnWhOgTu4Qb03mOj3b6tbgYefj/68aLj9ZbcLPrpRONMqy', 'Tech', 'Seesaard', 'aphichat.se@ku.th', '0840780999', '2025-09-27', 'Asdr77980', 'technician', NULL, 0, NULL, '/uploads/profile_images/68d91ec9775db3.18845944.jpeg', '', '', NULL, 0, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -526,7 +564,7 @@ ALTER TABLE `recovery_otps`
 -- AUTO_INCREMENT for table `report`
 --
 ALTER TABLE `report`
-  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `status_logs`
@@ -538,13 +576,13 @@ ALTER TABLE `status_logs`
 -- AUTO_INCREMENT for table `task`
 --
 ALTER TABLE `task`
-  MODIFY `tk_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `tk_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `task_status`
 --
 ALTER TABLE `task_status`
-  MODIFY `tk_status_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `tk_status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `tools`

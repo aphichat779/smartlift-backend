@@ -3,17 +3,22 @@ RewriteEngine On
 
 # API Routes
 RewriteRule ^api/dashboard/dashboard/?$ api/dashboard/dashboard.php [L,QSA]
+
 RewriteRule ^api/auth/register/?$ api/auth/register.php [L,QSA]
 RewriteRule ^api/auth/login/?$ api/auth/login.php [L,QSA]
+
 RewriteRule ^api/2fa/setup/?$ api/2fa/setup.php [L,QSA]
 RewriteRule ^api/2fa/verify-setup/?$ api/2fa/verify-setup.php [L,QSA]
 RewriteRule ^api/2fa/verify/?$ api/2fa/verify.php [L,QSA]
 RewriteRule ^api/2fa/reset-request/?$ api/2fa/reset-request.php [L,QSA]
 RewriteRule ^api/2fa/reset-verify/?$ api/2fa/reset-verify.php [L,QSA]
 RewriteRule ^api/2fa/TOTP-confirm/?$ api/2fa/TOTP-confirm.php [L,QSA]
+
 RewriteRule ^api/elevator/organizations/?$ api/elevator/organizations.php [L,QSA]
 RewriteRule ^api/elevator/buildings/?$ api/elevator/buildings.php [L,QSA]
 RewriteRule ^api/elevator/lifts/?$ api/elevator/lifts.php [L,QSA]
+
+RewriteRule ^api/work/tasks/?$ api/work/tasks.php [L,QSA]
 
 RewriteRule ^api/lifts/call_lift/?$ api/endpoints/call_lift.php [L,QSA]
 RewriteRule ^api/lifts/get_lift_status/?$ api/endpoints/get_lift_status.php [L,QSA]
