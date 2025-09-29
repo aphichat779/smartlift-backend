@@ -26,12 +26,37 @@ class User
     public $last_2fa_reset;
     public $failed_2fa_attempts;
     public $locked_until;
-    public $is_active; // เพิ่ม property ใหม่
+    public $is_active;
 
     public function __construct($db)
     {
         $this->conn = $db;
     }
+
+    /* ---------------- utility: แปลง row เป็น public array ---------------- */
+    private function rowToPublic(array $row): array {
+        return [
+            'id' => (int)$row['id'],
+            'username' => $row['username'],
+            'first_name' => $row['first_name'],
+            'last_name' => $row['last_name'],
+            'email' => $row['email'],
+            'phone' => $row['phone'],
+            'birthdate' => $row['birthdate'],
+            'address' => $row['address'],
+            'role' => $row['role'],
+            'ga_enabled' => (int)$row['ga_enabled'],
+            'org_id' => isset($row['org_id']) ? (int)$row['org_id'] : null,
+            'user_img' => $row['user_img'],
+            'recovery_email' => $row['recovery_email'],
+            'recovery_phone' => $row['recovery_phone'],
+            'last_2fa_reset' => $row['last_2fa_reset'],
+            'failed_2fa_attempts' => $row['failed_2fa_attempts'],
+            'locked_until' => $row['locked_until'],
+            'is_active' => isset($row['is_active']) ? (int)$row['is_active'] : null,
+        ];
+    }
+    /* --------------------------------------------------------------------- */
 
     public function create()
     {
@@ -73,7 +98,6 @@ class User
             $this->id = $this->conn->lastInsertId();
             return true;
         }
-
         return false;
     }
 
@@ -86,29 +110,9 @@ class User
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) {
-            $this->id = $row['id'];
-            $this->username = $row['username'];
-            $this->password = $row['password'];
-            $this->first_name = $row['first_name'];
-            $this->last_name = $row['last_name'];
-            $this->email = $row['email'];
-            $this->phone = $row['phone'];
-            $this->birthdate = $row['birthdate'];
-            $this->address = $row['address'];
-            $this->role = $row['role'];
-            $this->ga_secret_key = $row['ga_secret_key'];
-            $this->ga_enabled = $row['ga_enabled'];
-            $this->org_id = $row['org_id'];
-            $this->user_img = $row['user_img'];
-            $this->recovery_email = $row['recovery_email'];
-            $this->recovery_phone = $row['recovery_phone'];
-            $this->last_2fa_reset = $row['last_2fa_reset'];
-            $this->failed_2fa_attempts = $row['failed_2fa_attempts'];
-            $this->locked_until = $row['locked_until'];
-            $this->is_active = $row['is_active']; // ดึงค่า is_active
+            $this->hydrate($row);
             return true;
         }
-
         return false;
     }
 
@@ -121,30 +125,43 @@ class User
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row) {
-            $this->id = $row['id'];
-            $this->username = $row['username'];
-            $this->password = $row['password'];
-            $this->first_name = $row['first_name'];
-            $this->last_name = $row['last_name'];
-            $this->email = $row['email'];
-            $this->phone = $row['phone'];
-            $this->birthdate = $row['birthdate'];
-            $this->address = $row['address'];
-            $this->role = $row['role'];
-            $this->ga_secret_key = $row['ga_secret_key'];
-            $this->ga_enabled = $row['ga_enabled'];
-            $this->org_id = $row['org_id'];
-            $this->user_img = $row['user_img'];
-            $this->recovery_email = $row['recovery_email'];
-            $this->recovery_phone = $row['recovery_phone'];
-            $this->last_2fa_reset = $row['last_2fa_reset'];
-            $this->failed_2fa_attempts = $row['failed_2fa_attempts'];
-            $this->locked_until = $row['locked_until'];
-            $this->is_active = $row['is_active']; // ดึงค่า is_active
+            $this->hydrate($row);
             return true;
         }
-
         return false;
+    }
+
+    /* --------------- NEW: ดึงแบบ associative ง่าย ๆ สำหรับ API -------------- */
+    public function findAssocById(int $id): ?array {
+        $stmt = $this->conn->prepare("SELECT * FROM {$this->table_name} WHERE id = :id LIMIT 1");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+    /* --------------------------------------------------------------------- */
+
+    private function hydrate(array $row): void {
+        $this->id = $row['id'];
+        $this->username = $row['username'];
+        $this->password = $row['password'];
+        $this->first_name = $row['first_name'];
+        $this->last_name = $row['last_name'];
+        $this->email = $row['email'];
+        $this->phone = $row['phone'];
+        $this->birthdate = $row['birthdate'];
+        $this->address = $row['address'];
+        $this->role = $row['role'];
+        $this->ga_secret_key = $row['ga_secret_key'];
+        $this->ga_enabled = $row['ga_enabled'];
+        $this->org_id = $row['org_id'];
+        $this->user_img = $row['user_img'];
+        $this->recovery_email = $row['recovery_email'];
+        $this->recovery_phone = $row['recovery_phone'];
+        $this->last_2fa_reset = $row['last_2fa_reset'];
+        $this->failed_2fa_attempts = $row['failed_2fa_attempts'];
+        $this->locked_until = $row['locked_until'];
+        $this->is_active = $row['is_active'];
     }
 
     public function update()
@@ -240,17 +257,27 @@ class User
         return false;
     }
 
-    public function getAllUsers($limit = 50, $offset = 0)
+    /* --------------- UPDATED: รองรับกรองตาม org ----------------- */
+    public function getAllUsers($limit = 50, $offset = 0, ?int $scopeOrgId = null)
     {
+        $where = '';
+        if ($scopeOrgId !== null) {
+            $where = "WHERE org_id = :org_id";
+        }
+
         $query = "SELECT id, username, first_name, last_name, email, phone, role, 
-                          ga_enabled, org_id, user_img, last_2fa_reset, failed_2fa_attempts, locked_until, is_active
+                         ga_enabled, org_id, user_img, last_2fa_reset, failed_2fa_attempts, locked_until, is_active
                   FROM " . $this->table_name . " 
+                  {$where}
                   ORDER BY id DESC 
                   LIMIT :limit OFFSET :offset";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
-        $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
+        if ($scopeOrgId !== null) {
+            $stmt->bindValue(":org_id", $scopeOrgId, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+        $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -266,16 +293,24 @@ class User
         return $stmt->execute();
     }
 
-    // เพิ่ม method สำหรับเปิด/ปิดสถานะบัญชี
-    public function toggleActiveStatus($id, $is_active)
+    /* --------------- UPDATED: toggle สถานะแบบมี scope -------------- */
+    public function toggleActiveStatus($id, $is_active, ?int $scopeOrgId = null)
     {
-        $query = "UPDATE " . $this->table_name . " SET is_active = :is_active WHERE id = :id";
+        if ($scopeOrgId !== null) {
+            $query = "UPDATE " . $this->table_name . " SET is_active = :is_active WHERE id = :id AND org_id = :org_id";
+        } else {
+            $query = "UPDATE " . $this->table_name . " SET is_active = :is_active WHERE id = :id";
+        }
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':is_active', $is_active);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
+        $stmt->bindParam(':is_active', $is_active, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        if ($scopeOrgId !== null) {
+            $stmt->bindParam(':org_id', $scopeOrgId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return $stmt->rowCount() > 0;
     }
-
+    /* ---------------------------------------------------------------- */
 
     public function deleteUser($id)
     {
@@ -300,7 +335,7 @@ class User
         return $stmt->execute();
     }
 
-    // เพิ่มฟังก์ชันสำหรับดึงข้อมูลผู้ใช้แบบ public (ไม่รวม sensitive data)
+    // ดึงข้อมูลผู้ใช้แบบ public
     public function getPublicData()
     {
         return [
@@ -318,28 +353,54 @@ class User
             'user_img' => $this->user_img,
             'recovery_email' => $this->recovery_email,
             'recovery_phone' => $this->recovery_phone,
-            'is_active' => $this->is_active // เพิ่ม is_active
+            'is_active' => $this->is_active
         ];
     }
 
-    public function countAll(): int
+    /* --------------- UPDATED: รองรับ count ตาม org ---------------- */
+    public function countAll(?int $scopeOrgId = null): int
     {
-        $sql = "SELECT COUNT(*) AS c FROM users";
-        $stmt = $this->conn->prepare($sql);
+        if ($scopeOrgId !== null) {
+            $sql = "SELECT COUNT(*) AS c FROM {$this->table_name} WHERE org_id = :org_id";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindValue(':org_id', $scopeOrgId, PDO::PARAM_INT);
+        } else {
+            $sql = "SELECT COUNT(*) AS c FROM {$this->table_name}";
+            $stmt = $this->conn->prepare($sql);
+        }
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return (int)$row['c'];
     }
+    /* ---------------------------------------------------------------- */
 
-    public function updateUserOrg(int $userId, int $orgId): bool
+    /* --------------- UPDATED: update org แบบมี scope ---------------- */
+    public function updateUserOrg(int $userId, int $orgId, ?int $scopeOrgId = null): bool
     {
         // ตรวจว่ามี org นี้จริง
         $check = $this->conn->prepare("SELECT id FROM organizations WHERE id = :org_id");
         $check->execute([':org_id' => $orgId]);
         if (!$check->fetch(PDO::FETCH_ASSOC)) return false;
 
-        $sql = "UPDATE users SET org_id = :org_id WHERE id = :id";
-        $stmt = $this->conn->prepare($sql);
-        return $stmt->execute([':org_id' => $orgId, ':id' => $userId]);
+        if ($scopeOrgId !== null && $orgId !== $scopeOrgId) {
+            // org_admin ห้ามย้ายออกนอก org ตัวเอง
+            return false;
+        }
+
+        if ($scopeOrgId !== null) {
+            // ป้องกันแก้ข้าม org (target ต้องอยู่ org เดียวกัน)
+            $sql = "UPDATE {$this->table_name} SET org_id = :org_id WHERE id = :id AND org_id = :scope_org";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->bindValue(':scope_org', $scopeOrgId, PDO::PARAM_INT);
+        } else {
+            $sql = "UPDATE {$this->table_name} SET org_id = :org_id WHERE id = :id";
+            $stmt = $this->conn->prepare($sql);
+        }
+
+        $stmt->bindValue(':org_id', $orgId, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->rowCount() > 0;
     }
+    /* ---------------------------------------------------------------- */
 }

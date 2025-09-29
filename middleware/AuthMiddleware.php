@@ -24,7 +24,7 @@ class AuthMiddleware {
             self::sendUnauthorized('Invalid or expired token');
         }
 
-        return $payload;
+        return $payload; // ควรมี ['id','role','org_id',...]
     }
 
     public static function requireAdmin() {
@@ -34,6 +34,24 @@ class AuthMiddleware {
         }
         return $user;
     }
+
+    /* ---------------- NEW: helpers สำหรับบทบาท ---------------- */
+    public static function isAdmin(array $u): bool {
+        return (($u['role'] ?? '') === 'admin');
+    }
+
+    public static function isOrgAdmin(array $u): bool {
+        return (($u['role'] ?? '') === 'org_admin');
+    }
+
+    public static function requireAdminOrOrgAdmin() {
+        $u = self::authenticate();
+        if (!self::isAdmin($u) && !self::isOrgAdmin($u)) {
+            self::sendForbidden('Forbidden (admin/org_admin only)');
+        }
+        return $u;
+    }
+    /* ----------------------------------------------------------- */
 
     public static function optionalAuth() {
         $headers = getallheaders();
@@ -83,15 +101,9 @@ class AuthMiddleware {
 }
 
 // -------------------
-// เพิ่ม Global helpers
+// Global helpers
 // -------------------
-
-// ใช้ในไฟล์ API ต่าง ๆ ได้ทันที (เหมือนที่คุณเรียกอยู่)
 if (!function_exists('requireAuth')) {
-    /**
-     * requireAuth(['admin','org_admin',...]) -> คืน payload ผู้ใช้ (array)
-     * ถ้า token ไม่ถูกต้อง/ไม่มีสิทธิ์ จะส่ง response และ exit ภายใน
-     */
     function requireAuth(array $roles = []) {
         $user = AuthMiddleware::authenticate(); // will exit on fail
         if (!empty($roles) && !in_array($user['role'] ?? '', $roles, true)) {
@@ -108,9 +120,6 @@ if (!function_exists('requireAuth')) {
 }
 
 if (!function_exists('currentUser')) {
-    /**
-     * ดึง payload ปัจจุบัน (nullable) โดยไม่บังคับต้องมี token
-     */
     function currentUser(): ?array {
         $u = AuthMiddleware::optionalAuth();
         return $u ?: null;
