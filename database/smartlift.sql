@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 28, 2025 at 09:02 PM
+-- Generation Time: Sep 30, 2025 at 06:40 PM
 -- Server version: 5.7.24
 -- PHP Version: 8.3.1
 
@@ -60,16 +60,16 @@ CREATE TABLE `backup_codes` (
 --
 
 INSERT INTO `backup_codes` (`id`, `user_id`, `code`, `is_used`, `created_at`, `used_at`) VALUES
-(1, 1, '4FC0BD2C30', 0, '2025-09-27 00:05:37', NULL),
-(2, 1, '7296462124', 0, '2025-09-27 00:05:37', NULL),
-(3, 1, 'FFC02C4A55', 0, '2025-09-27 00:05:37', NULL),
-(4, 1, 'EF8F4F1B76', 0, '2025-09-27 00:05:37', NULL),
-(5, 1, '842A2A02F1', 0, '2025-09-27 00:05:37', NULL),
-(6, 1, '8209C08029', 0, '2025-09-27 00:05:37', NULL),
-(7, 1, 'B911478F05', 0, '2025-09-27 00:05:37', NULL),
-(8, 1, '4B6B3EF895', 0, '2025-09-27 00:05:37', NULL),
-(9, 1, 'C468E448F6', 0, '2025-09-27 00:05:37', NULL),
-(10, 1, 'CB8A27A8AF', 0, '2025-09-27 00:05:37', NULL);
+(11, 1, '72242B95FE', 0, '2025-09-29 04:09:55', NULL),
+(12, 1, '8DAA5CE46C', 0, '2025-09-29 04:09:55', NULL),
+(13, 1, '6C655F424F', 0, '2025-09-29 04:09:55', NULL),
+(14, 1, 'E2B7D4188D', 0, '2025-09-29 04:09:55', NULL),
+(15, 1, 'AA57D4ACF9', 0, '2025-09-29 04:09:55', NULL),
+(16, 1, 'A64D2F9C9B', 0, '2025-09-29 04:09:55', NULL),
+(17, 1, '856033D0C2', 0, '2025-09-29 04:09:55', NULL),
+(18, 1, 'E36B12C98C', 0, '2025-09-29 04:09:55', NULL),
+(19, 1, 'DB43E85815', 0, '2025-09-29 04:09:55', NULL),
+(20, 1, '9D7EBFD328', 0, '2025-09-29 04:09:55', NULL);
 
 -- --------------------------------------------------------
 
@@ -215,6 +215,14 @@ CREATE TABLE `report` (
   `detail` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Dumping data for table `report`
+--
+
+INSERT INTO `report` (`rp_id`, `date_rp`, `user_id`, `org_id`, `building_id`, `lift_id`, `detail`) VALUES
+(1, '2025-09-29', 1, 1, 4, 8, '- ปุ่มกดภายในไม่ทำงาน [URG:MEDIUM] [STA:OPEN]'),
+(2, '2025-09-29', 1, 3, 3, 5, '- มีเสียงดังผิดปกติระหว่างวิ่ง [URG:MEDIUM] [STA:OPEN]');
+
 -- --------------------------------------------------------
 
 --
@@ -255,6 +263,13 @@ CREATE TABLE `task` (
   `tk_status` enum('assign','preparing','progress','test','complete') NOT NULL DEFAULT 'assign'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Dumping data for table `task`
+--
+
+INSERT INTO `task` (`tk_id`, `tk_data`, `task_start_date`, `rp_id`, `user_id`, `user`, `mainten_id`, `org_name`, `building_name`, `lift_id`, `tools`, `tk_status`) VALUES
+(1, '', NULL, 2, 3, 'Technician123', 3, 'PSU', 'อาคารเย็นศิระ', '5', '[]', 'preparing');
+
 -- --------------------------------------------------------
 
 --
@@ -271,6 +286,14 @@ CREATE TABLE `task_status` (
   `tk_img` longblob,
   `section` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `task_status`
+--
+
+INSERT INTO `task_status` (`tk_status_id`, `tk_id`, `status`, `time`, `detail`, `tk_status_tool`, `tk_img`, `section`) VALUES
+(1, 1, 'assign', '2025-09-30 10:29:47', 'Assigned by admin', NULL, NULL, 'assignment'),
+(2, 1, 'preparing', '2025-09-30 10:34:48', 'Technician accepted → preparing.', NULL, NULL, 'progress');
 
 -- --------------------------------------------------------
 
@@ -346,6 +369,17 @@ CREATE TABLE `users` (
   `locked_until` datetime DEFAULT NULL COMMENT 'ล็อคบัญชีจนถึงเวลาที่กำหนด',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '0=Inactive, 1=Active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `password`, `first_name`, `last_name`, `email`, `phone`, `birthdate`, `address`, `role`, `ga_secret_key`, `ga_enabled`, `org_id`, `user_img`, `recovery_email`, `recovery_phone`, `last_2fa_reset`, `failed_2fa_attempts`, `locked_until`, `is_active`) VALUES
+(1, 'Admin12345', '$2y$10$yIxtYY1YTrh9E9t0cOKJ/OXU2uzoZ0lCxxtiGyXHmgFbo/c9/wJ2K', 'Admin', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'admin', 'C6JJ6OA5OUBFWE5G', 1, NULL, NULL, '', '', NULL, 0, NULL, 1),
+(2, 'OrgAdmin123', '$2y$10$Q9vwj4uKNpVABuDND8fN7u3FdW20TXoq9ELm9xi6MHwme3q4HWqwK', 'OrgAdmin', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
+(3, 'Technician123', '$2y$10$.I0LkdkulLlzjF50pip5OOtFBukPoSus7Ysdk/uspmoOI1gPbKziK', 'Technician', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'technician', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1),
+(4, 'User1234', '$2y$10$5LvuPWZfjDS5S7f77os7Vuo7PXiCohI4isJX5UIK9mj0l7vGKPhs.', 'User', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
+(5, 'User5678', '$2y$10$4MxuwIOhgud.BMerbqtefOW0GgIhgYl83CMeTMmXbjMI3efjXc9bu', 'User', 'name', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'user', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 0);
 
 --
 -- Indexes for dumped tables
@@ -452,7 +486,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `backup_codes`
 --
 ALTER TABLE `backup_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `buildings`
@@ -488,7 +522,7 @@ ALTER TABLE `recovery_otps`
 -- AUTO_INCREMENT for table `report`
 --
 ALTER TABLE `report`
-  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `status_logs`
@@ -500,13 +534,13 @@ ALTER TABLE `status_logs`
 -- AUTO_INCREMENT for table `task`
 --
 ALTER TABLE `task`
-  MODIFY `tk_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `tk_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `task_status`
 --
 ALTER TABLE `task_status`
-  MODIFY `tk_status_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `tk_status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `tools`
@@ -530,42 +564,17 @@ ALTER TABLE `twofa_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
 --
 
 --
--- Constraints for table `backup_codes`
---
-ALTER TABLE `backup_codes`
-  ADD CONSTRAINT `backup_codes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `otp_tokens`
 --
 ALTER TABLE `otp_tokens`
   ADD CONSTRAINT `otp_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `recovery_otps`
---
-ALTER TABLE `recovery_otps`
-  ADD CONSTRAINT `recovery_otps_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `twofa_reset_logs`
---
-ALTER TABLE `twofa_reset_logs`
-  ADD CONSTRAINT `twofa_reset_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `twofa_reset_logs_ibfk_2` FOREIGN KEY (`admin_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
-
---
--- Constraints for table `twofa_settings`
---
-ALTER TABLE `twofa_settings`
-  ADD CONSTRAINT `twofa_settings_ibfk_1` FOREIGN KEY (`updated_user_id`) REFERENCES `users` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
