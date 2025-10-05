@@ -11,8 +11,8 @@ require_once __DIR__ . '/../../utils/ValidationHelper.php';
 CORSMiddleware::handle();
 
 try {
-    // อนุญาตทั้ง admin และ org_admin (ใช้ helper ที่มีอยู่จริง)
-    $authUser = requireAuth(['admin', 'org_admin']); // จะ exit ให้เองถ้า token/role ไม่ผ่าน
+    // อนุญาตทั้ง super_admin, admin และ org_admin (ใช้ helper ที่มีอยู่จริง)
+    $authUser = requireAuth(['super_admin', 'admin']); // จะ exit ให้เองถ้า token/role ไม่ผ่าน
     if (!$authUser) { exit; }
 
     $database = new Database();
@@ -23,17 +23,17 @@ try {
 
     // บทบาทปัจจุบัน
     $role       = $authUser['role'] ?? '';
+    $isSuperAdmin = ($role === 'super_admin');
     $isAdmin    = ($role === 'admin');
-    $isOrgAdmin = ($role === 'org_admin');
-    $scopeOrgId = $isOrgAdmin ? (int)($authUser['org_id'] ?? 0) : null;
+    $scopeOrgId = $isAdmin ? (int)($authUser['org_id'] ?? 0) : null;
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $page   = isset($_GET['page'])  ? max(1, (int)$_GET['page'])  : 1;
         $limit  = isset($_GET['limit']) ? max(1, (int)$_GET['limit']) : 20;
         $offset = ($page - 1) * $limit;
 
-        if ($isOrgAdmin) {
-            // กรณี org_admin: ดึงเฉพาะผู้ใช้ใน org ตัวเอง (ไม่ไปแก้ Model เดิม)
+        if ($isAdmin) {
+            // กรณี admin: ดึงเฉพาะผู้ใช้ใน org ตัวเอง (ไม่ไปแก้ Model เดิม)
             $sql  = "SELECT id, username, first_name, last_name, email, phone, role,
                             ga_enabled, org_id, user_img, last_2fa_reset, failed_2fa_attempts, locked_until, is_active
                      FROM users
@@ -53,7 +53,7 @@ try {
             $totalRow = $stmt2->fetch(PDO::FETCH_ASSOC);
             $total    = (int)($totalRow['c'] ?? 0);
         } else {
-            // admin: ใช้เมธอดเดิมของโมเดล
+            // super_admin: ใช้เมธอดเดิมของโมเดล
             $users = $user->getAllUsers($limit, $offset);
             $total = $user->countAll();
         }
@@ -99,16 +99,16 @@ try {
             exit;
         }
 
-        // ถ้าเป็น org_admin แต่คนเป้าหมายอยู่อีก org -> ห้าม
-        if ($isOrgAdmin && (int)$targetUser->org_id !== (int)$scopeOrgId) {
+        // ถ้าเป็น admin แต่คนเป้าหมายอยู่อีก org -> ห้าม
+        if ($isAdmin && (int)$targetUser->org_id !== (int)$scopeOrgId) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'ไม่มีสิทธิ์ต่างองค์กร']);
             exit;
         }
 
         if ($action === 'update_role') {
-            $allowedRolesAdmin    = ['admin','org_admin','technician','user'];
-            $allowedRolesOrgAdmin = ['org_admin','technician','user']; // org_admin ห้ามตั้งเป็น admin
+            $allowedRolesSuperAdmin = ['super_admin','admin','technician','user'];
+            $allowedRolesAdmin      = ['admin','technician','user']; // admin ห้ามตั้งเป็น super_admin
 
             if (!isset($data->role)) {
                 http_response_code(400);
@@ -116,7 +116,7 @@ try {
                 exit;
             }
             $newRole     = (string)$data->role;
-            $allowedPool = $isAdmin ? $allowedRolesAdmin : $allowedRolesOrgAdmin;
+            $allowedPool = $isSuperAdmin ? $allowedRolesSuperAdmin : $allowedRolesAdmin;
 
             if (!in_array($newRole, $allowedPool, true)) {
                 http_response_code(400);
@@ -143,7 +143,7 @@ try {
 
             $isActive = (int)!!$data->is_active; // 1 หรือ 0
 
-            // org_admin จัดการได้เฉพาะใน org ตัวเอง (เช็คแล้วด้านบนด้วย targetUser->org_id)
+            // admin จัดการได้เฉพาะใน org ตัวเอง (เช็คแล้วด้านบนด้วย targetUser->org_id)
             if ($user->toggleActiveStatus($userIdToUpdate, $isActive)) {
                 http_response_code(200);
                 echo json_encode(['success' => true, 'message' => 'เปลี่ยนสถานะบัญชีสำเร็จ']);
@@ -162,10 +162,10 @@ try {
             }
             $newOrgId = (int)$data->org_id;
 
-            // org_admin ไม่อนุญาตให้ย้ายข้ามองค์กร (ต้องอยู่ org ตัวเองเท่านั้น)
-            if ($isOrgAdmin && $newOrgId !== (int)$scopeOrgId) {
+            // admin ไม่อนุญาตให้ย้ายข้ามองค์กร (ต้องอยู่ org ตัวเองเท่านั้น)
+            if ($isAdmin && $newOrgId !== (int)$scopeOrgId) {
                 http_response_code(403);
-                echo json_encode(['success' => false, 'message' => 'org-admin ไม่สามารถย้ายผู้ใช้ออกนอกองค์กรได้']);
+                echo json_encode(['success' => false, 'message' => 'admin ไม่สามารถย้ายผู้ใช้ออกนอกองค์กรได้']);
                 exit;
             }
 

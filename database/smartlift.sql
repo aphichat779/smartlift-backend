@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 30, 2025 at 06:40 PM
+-- Generation Time: Oct 05, 2025 at 12:53 PM
 -- Server version: 5.7.24
 -- PHP Version: 8.3.1
 
@@ -30,15 +30,15 @@ SET time_zone = "+00:00";
 CREATE TABLE `app_calls` (
   `id` int(11) NOT NULL,
   `lift_id` int(11) NOT NULL,
-  `floor_no` varchar(3) COLLATE utf8_unicode_ci NOT NULL DEFAULT '1',
-  `direction` char(1) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'U',
-  `client_id` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
-  `is_processed` enum('N','Y') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'N',
+  `floor_no` varchar(3) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '1',
+  `direction` char(1) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'U',
+  `client_id` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_processed` enum('N','Y') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'N',
   `created_user_id` int(11) NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_user_id` int(11) NOT NULL,
   `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -49,27 +49,11 @@ CREATE TABLE `app_calls` (
 CREATE TABLE `backup_codes` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `code` varchar(10) NOT NULL,
+  `code` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
   `is_used` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` datetime NOT NULL,
   `used_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `backup_codes`
---
-
-INSERT INTO `backup_codes` (`id`, `user_id`, `code`, `is_used`, `created_at`, `used_at`) VALUES
-(11, 1, '72242B95FE', 0, '2025-09-29 04:09:55', NULL),
-(12, 1, '8DAA5CE46C', 0, '2025-09-29 04:09:55', NULL),
-(13, 1, '6C655F424F', 0, '2025-09-29 04:09:55', NULL),
-(14, 1, 'E2B7D4188D', 0, '2025-09-29 04:09:55', NULL),
-(15, 1, 'AA57D4ACF9', 0, '2025-09-29 04:09:55', NULL),
-(16, 1, 'A64D2F9C9B', 0, '2025-09-29 04:09:55', NULL),
-(17, 1, '856033D0C2', 0, '2025-09-29 04:09:55', NULL),
-(18, 1, 'E36B12C98C', 0, '2025-09-29 04:09:55', NULL),
-(19, 1, 'DB43E85815', 0, '2025-09-29 04:09:55', NULL),
-(20, 1, '9D7EBFD328', 0, '2025-09-29 04:09:55', NULL);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -80,24 +64,14 @@ INSERT INTO `backup_codes` (`id`, `user_id`, `code`, `is_used`, `created_at`, `u
 CREATE TABLE `buildings` (
   `id` int(11) NOT NULL,
   `org_id` int(11) NOT NULL,
-  `building_name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
-  `description` text COLLATE utf8_unicode_ci,
-  `address` text COLLATE utf8_unicode_ci,
+  `building_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` mediumtext COLLATE utf8mb4_unicode_ci,
+  `address` mediumtext COLLATE utf8mb4_unicode_ci,
   `created_user_id` int(11) NOT NULL,
-  `created_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_user_id` int(11) NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- Dumping data for table `buildings`
---
-
-INSERT INTO `buildings` (`id`, `org_id`, `building_name`, `description`, `address`, `created_user_id`, `created_at`, `update_user_id`, `updated_at`) VALUES
-(1, 1, 'อาคาร 19', NULL, NULL, 1, '2023-10-07 15:16:25', 1, '2023-10-07 15:16:25'),
-(2, 2, 'อาคาร 1 เทคนิคสกล', NULL, NULL, 1, '2023-10-07 15:21:12', 1, '2023-10-07 15:21:12'),
-(3, 3, 'อาคารเย็นศิระ', NULL, NULL, 1, '2023-10-07 15:21:35', 1, '2023-10-07 15:21:35'),
-(4, 1, 'อาคาร 1', NULL, NULL, 1, '2023-10-10 20:01:06', 1, '2023-10-10 20:01:06');
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -109,35 +83,20 @@ CREATE TABLE `lifts` (
   `id` int(11) NOT NULL,
   `org_id` int(11) NOT NULL,
   `building_id` int(11) DEFAULT NULL,
-  `lift_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `lift_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
   `max_level` int(11) NOT NULL,
-  `mac_address` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
-  `floor_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  `description` text COLLATE utf8_unicode_ci NOT NULL,
-  `lift_state` char(12) COLLATE utf8_unicode_ci NOT NULL DEFAULT '000000000000',
-  `up_status` char(8) COLLATE utf8_unicode_ci NOT NULL DEFAULT '00000000',
-  `down_status` char(8) COLLATE utf8_unicode_ci NOT NULL DEFAULT '00000000',
-  `car_status` char(8) COLLATE utf8_unicode_ci NOT NULL DEFAULT '00000000',
+  `mac_address` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `floor_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `lift_state` char(12) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '000000000000',
+  `up_status` char(8) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '00000000',
+  `down_status` char(8) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '00000000',
+  `car_status` char(8) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '00000000',
   `created_user_id` int(11) NOT NULL,
-  `created_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_user_id` int(11) NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- Dumping data for table `lifts`
---
-
-INSERT INTO `lifts` (`id`, `org_id`, `building_id`, `lift_name`, `max_level`, `mac_address`, `floor_name`, `description`, `lift_state`, `up_status`, `down_status`, `car_status`, `created_user_id`, `created_at`, `updated_user_id`, `updated_at`) VALUES
-(1, 1, 1, 'KUSE', 15, 'DEADBEEF01ED', '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15', 'KUSE', '030900000000', '00000000', '00000000', '00000000', 1, '2022-10-31 11:41:50', 2, '2023-06-01 13:46:19'),
-(2, 2, 2, 'SNKTC', 4, 'DEADBEEF02ED', '1,2,3,4', 'SNKTC', '018C00000000', '00000000', '00000000', '00000000', 1, '2022-12-06 03:08:32', 2, '2023-06-01 08:46:25'),
-(3, 3, 3, 'FL1', 14, 'DEADBEEF03ED', '1,1A,2,2A,3,4,5,6,7,8,9,10,11,12', 'Fire Lift 1', '000000000000', '00000000', '00000000', '00000000', 1, '2023-06-01 14:10:50', 1, '2023-06-01 14:10:50'),
-(4, 3, 3, 'PL1', 14, 'DEADBEEF04ED', '1,1A,2,2A,3,4,5,6,7,8,9,10,11,12', 'Patient 1', '000000000000', '00000000', '00000000', '00000000', 1, '2023-06-01 14:11:43', 1, '2023-06-01 14:11:43'),
-(5, 3, 3, 'BL1', 14, 'DEADBEEF05ED', '1,1A,2,2A,3,4,5,6,7,8,9,10,11,12', 'Bed 1', '000000000000', '00000000', '00000000', '00000000', 1, '2023-06-01 14:12:17', 1, '2023-06-01 14:12:17'),
-(6, 3, 3, 'PL2', 14, 'DEADBEEF06ED', '1,1A,2,2A,3,4,5,6,7,8,9,10,11,12', 'Patient 2', '000000000000', '00000000', '00000000', '00000000', 1, '2023-06-01 14:12:43', 1, '2023-06-01 14:12:43'),
-(7, 3, 3, 'PL3', 14, 'DEADBEEF07ED', '1,1A,2,2A,3,4,5,6,7,8,9,10,11,12', 'Patient 3', '000000000000', '00000000', '00000000', '00000000', 1, '2023-06-01 14:13:10', 1, '2023-06-01 14:13:10'),
-(8, 1, 4, 'CSC01', 4, 'DEADBEEF08ED', '1,2,3,4', 'Building 1', '000000000000', '00000000', '00000000', '00000000', 1, '2023-09-24 17:34:19', 1, '2023-09-24 17:34:19'),
-(22, 18, NULL, 'TEST', 5, 'DEADBEEF09ED', '1,2,3,4,5', '', '000000000000', '00000000', '00000000', '00000000', 1, '2024-05-27 12:35:25', 1, '2024-05-27 12:35:25');
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -147,23 +106,13 @@ INSERT INTO `lifts` (`id`, `org_id`, `building_id`, `lift_name`, `max_level`, `m
 
 CREATE TABLE `organizations` (
   `id` int(11) NOT NULL,
-  `org_name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
-  `description` text COLLATE utf8_unicode_ci NOT NULL,
+  `org_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_user_id` int(11) NOT NULL,
-  `created_at` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_user_id` int(11) NOT NULL,
-  `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
---
--- Dumping data for table `organizations`
---
-
-INSERT INTO `organizations` (`id`, `org_name`, `description`, `created_user_id`, `created_at`, `updated_user_id`, `updated_at`) VALUES
-(1, 'KU CSC', 'มหาวิทยาลัยเกษตรศาสตร์\r\nวิทยาเขตเฉลิมพระเกียรติ จังหวัดสกลนคร\r\n59 หมู่ 1 ถ.วปรอ 366 ต.เชียงเครือ อ.เมือง จ.สกลนคร 47000 โทรศัพท์ 061-0287788', 1, '2022-10-31 11:40:46', 1, '2022-10-31 11:40:46'),
-(2, 'SNKTC', '\r\nวิทยาลัยเทคนิคสกลนคร', 1, '2023-02-13 12:30:16', 1, '2023-02-13 12:30:16'),
-(3, 'PSU', 'มหาวิทยาลัยสงขลานครินทร์', 1, '2023-06-01 14:10:06', 1, '2023-06-01 14:10:06'),
-(18, 'TEST', '', 1, '2024-02-18 15:55:15', 1, '2024-02-18 15:55:15');
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -174,12 +123,12 @@ INSERT INTO `organizations` (`id`, `org_name`, `description`, `created_user_id`,
 CREATE TABLE `otp_tokens` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `method` enum('email','sms') NOT NULL,
-  `otp_code` varchar(6) NOT NULL,
+  `method` enum('email','sms') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `otp_code` varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL,
   `created_at` datetime NOT NULL,
   `expires_at` datetime NOT NULL,
   `is_verified` tinyint(1) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -190,14 +139,14 @@ CREATE TABLE `otp_tokens` (
 CREATE TABLE `recovery_otps` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `otp_code` varchar(6) NOT NULL,
-  `otp_type` enum('email','sms') NOT NULL,
-  `contact_info` varchar(255) NOT NULL COMMENT 'email address or phone number',
+  `otp_code` varchar(6) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `otp_type` enum('email','sms') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `contact_info` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'email address or phone number',
   `is_used` tinyint(1) NOT NULL DEFAULT '0',
   `expires_at` datetime NOT NULL,
   `created_at` datetime NOT NULL,
   `used_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -212,16 +161,10 @@ CREATE TABLE `report` (
   `org_id` int(11) NOT NULL,
   `building_id` int(11) NOT NULL,
   `lift_id` int(11) NOT NULL,
-  `detail` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `report`
---
-
-INSERT INTO `report` (`rp_id`, `date_rp`, `user_id`, `org_id`, `building_id`, `lift_id`, `detail`) VALUES
-(1, '2025-09-29', 1, 1, 4, 8, '- ปุ่มกดภายในไม่ทำงาน [URG:MEDIUM] [STA:OPEN]'),
-(2, '2025-09-29', 1, 3, 3, 5, '- มีเสียงดังผิดปกติระหว่างวิ่ง [URG:MEDIUM] [STA:OPEN]');
+  `detail` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -232,15 +175,15 @@ INSERT INTO `report` (`rp_id`, `date_rp`, `user_id`, `org_id`, `building_id`, `l
 CREATE TABLE `status_logs` (
   `id` int(11) NOT NULL,
   `lift_id` int(11) NOT NULL,
-  `lift_state` varchar(20) DEFAULT NULL,
-  `up_status` varchar(20) DEFAULT NULL,
-  `down_status` varchar(20) DEFAULT NULL,
-  `car_status` varchar(20) DEFAULT NULL,
+  `lift_state` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `up_status` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `down_status` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `car_status` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_user_id` int(11) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_user_id` int(11) DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -250,25 +193,22 @@ CREATE TABLE `status_logs` (
 
 CREATE TABLE `task` (
   `tk_id` int(11) NOT NULL,
-  `tk_data` varchar(255) NOT NULL,
+  `tk_data` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `task_start_date` datetime DEFAULT NULL,
+  `start_date` date DEFAULT NULL,
+  `expected_end_date` date DEFAULT NULL,
   `rp_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `user` varchar(255) NOT NULL,
+  `user` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `mainten_id` int(11) NOT NULL,
-  `org_name` varchar(255) NOT NULL,
-  `building_name` varchar(255) NOT NULL,
-  `lift_id` varchar(255) NOT NULL,
-  `tools` longtext NOT NULL,
-  `tk_status` enum('assign','preparing','progress','test','complete') NOT NULL DEFAULT 'assign'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `task`
---
-
-INSERT INTO `task` (`tk_id`, `tk_data`, `task_start_date`, `rp_id`, `user_id`, `user`, `mainten_id`, `org_name`, `building_name`, `lift_id`, `tools`, `tk_status`) VALUES
-(1, '', NULL, 2, 3, 'Technician123', 3, 'PSU', 'อาคารเย็นศิระ', '5', '[]', 'preparing');
+  `org_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `org_id` int(11) DEFAULT NULL,
+  `building_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `building_id` int(11) DEFAULT NULL,
+  `lift_id` int(11) NOT NULL,
+  `tools` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tk_status` enum('assign','preparing','progress','complete') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'assign'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -279,21 +219,13 @@ INSERT INTO `task` (`tk_id`, `tk_data`, `task_start_date`, `rp_id`, `user_id`, `
 CREATE TABLE `task_status` (
   `tk_status_id` int(11) NOT NULL,
   `tk_id` int(11) NOT NULL,
-  `status` enum('assign','preparing','progress','test','complete') NOT NULL,
+  `status` enum('assign','preparing','progress','complete') COLLATE utf8mb4_unicode_ci NOT NULL,
   `time` datetime NOT NULL,
-  `detail` varchar(255) NOT NULL,
-  `tk_status_tool` longtext,
+  `detail` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tk_status_tool` longtext COLLATE utf8mb4_unicode_ci,
   `tk_img` longblob,
-  `section` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `task_status`
---
-
-INSERT INTO `task_status` (`tk_status_id`, `tk_id`, `status`, `time`, `detail`, `tk_status_tool`, `tk_img`, `section`) VALUES
-(1, 1, 'assign', '2025-09-30 10:29:47', 'Assigned by admin', NULL, NULL, 'assignment'),
-(2, 1, 'preparing', '2025-09-30 10:34:48', 'Technician accepted → preparing.', NULL, NULL, 'progress');
+  `section` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -303,9 +235,9 @@ INSERT INTO `task_status` (`tk_status_id`, `tk_id`, `status`, `time`, `detail`, 
 
 CREATE TABLE `tools` (
   `tool_id` int(11) NOT NULL,
-  `tool_name` varchar(255) NOT NULL,
+  `tool_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `cost` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -316,15 +248,15 @@ CREATE TABLE `tools` (
 CREATE TABLE `twofa_reset_logs` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `reset_method` enum('email','sms','backup_code') NOT NULL,
-  `old_secret_key` varchar(255) DEFAULT NULL,
-  `new_secret_key` varchar(255) DEFAULT NULL,
-  `ip_address` varchar(45) NOT NULL,
-  `user_agent` text,
-  `reset_reason` varchar(255) DEFAULT NULL,
+  `reset_method` enum('email','sms','backup_code') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `old_secret_key` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `new_secret_key` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_agent` text COLLATE utf8mb4_unicode_ci,
+  `reset_reason` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `admin_user_id` int(11) DEFAULT NULL COMMENT 'หากมี admin ช่วยในการ reset',
   `created_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -334,12 +266,12 @@ CREATE TABLE `twofa_reset_logs` (
 
 CREATE TABLE `twofa_settings` (
   `id` int(11) NOT NULL,
-  `setting_name` varchar(100) NOT NULL,
-  `setting_value` text NOT NULL,
-  `description` text,
+  `setting_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `setting_value` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
   `updated_user_id` int(11) NOT NULL,
   `updated_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -349,37 +281,37 @@ CREATE TABLE `twofa_settings` (
 
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
-  `username` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `first_name` varchar(255) NOT NULL,
-  `last_name` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `phone` varchar(255) NOT NULL,
+  `username` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `first_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `last_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `phone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `birthdate` date NOT NULL,
-  `address` varchar(255) NOT NULL,
-  `role` enum('admin','org-admin','technician','user') NOT NULL DEFAULT 'user',
-  `ga_secret_key` varchar(255) DEFAULT NULL COMMENT 'Authenticator secret key',
+  `address` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `role` enum('super_admin','admin','technician','user') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'user',
+  `ga_secret_key` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Authenticator secret key',
   `ga_enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0=Disabled, 1=Enabled for Authenticator',
   `org_id` int(11) DEFAULT NULL,
-  `user_img` varchar(255) DEFAULT NULL COMMENT 'URL of the user profile image',
-  `recovery_email` varchar(255) DEFAULT NULL COMMENT 'Email สำหรับกู้คืน (อาจต่างจาก email หลัก)',
-  `recovery_phone` varchar(20) DEFAULT NULL COMMENT 'Phone สำหรับกู้คืน',
+  `user_img` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'URL of the user profile image',
+  `recovery_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Email สำหรับกู้คืน (อาจต่างจาก email หลัก)',
+  `recovery_phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Phone สำหรับกู้คืน',
   `last_2fa_reset` datetime DEFAULT NULL COMMENT 'วันที่ reset 2FA ครั้งล่าสุด',
   `failed_2fa_attempts` int(11) NOT NULL DEFAULT '0' COMMENT 'จำนวนครั้งที่ล้มเหลวในการใช้ 2FA',
   `locked_until` datetime DEFAULT NULL COMMENT 'ล็อคบัญชีจนถึงเวลาที่กำหนด',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '0=Inactive, 1=Active'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '0=Inactive, 1=Active',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `first_name`, `last_name`, `email`, `phone`, `birthdate`, `address`, `role`, `ga_secret_key`, `ga_enabled`, `org_id`, `user_img`, `recovery_email`, `recovery_phone`, `last_2fa_reset`, `failed_2fa_attempts`, `locked_until`, `is_active`) VALUES
-(1, 'Admin12345', '$2y$10$yIxtYY1YTrh9E9t0cOKJ/OXU2uzoZ0lCxxtiGyXHmgFbo/c9/wJ2K', 'Admin', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'admin', 'C6JJ6OA5OUBFWE5G', 1, NULL, NULL, '', '', NULL, 0, NULL, 1),
-(2, 'OrgAdmin123', '$2y$10$Q9vwj4uKNpVABuDND8fN7u3FdW20TXoq9ELm9xi6MHwme3q4HWqwK', 'OrgAdmin', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
-(3, 'Technician123', '$2y$10$.I0LkdkulLlzjF50pip5OOtFBukPoSus7Ysdk/uspmoOI1gPbKziK', 'Technician', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'technician', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1),
-(4, 'User1234', '$2y$10$5LvuPWZfjDS5S7f77os7Vuo7PXiCohI4isJX5UIK9mj0l7vGKPhs.', 'User', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'user', NULL, 0, 1, NULL, '', '', NULL, 0, NULL, 1),
-(5, 'User5678', '$2y$10$4MxuwIOhgud.BMerbqtefOW0GgIhgYl83CMeTMmXbjMI3efjXc9bu', 'User', 'name', 'aphichat.se@ku.th', '0840780999', '2025-09-29', 'ABC1234770', 'user', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 0);
+INSERT INTO `users` (`id`, `username`, `password`, `first_name`, `last_name`, `email`, `phone`, `birthdate`, `address`, `role`, `ga_secret_key`, `ga_enabled`, `org_id`, `user_img`, `recovery_email`, `recovery_phone`, `last_2fa_reset`, `failed_2fa_attempts`, `locked_until`, `is_active`, `created_at`) VALUES
+(1, 'Super1234', '$2y$10$el.Qd37IAdhAVkNct9i.Xeje755zJo2vzpq96kmaQK/MlBm7w6O36', 'Super', 'Admin', 'aphichat.se@ku.th', '0840780999', '2025-10-05', 'ABC1234770', 'super_admin', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1, '2025-10-05 19:48:29'),
+(2, 'Admin12345', '$2y$10$s.W6A7kFILgLPEAuNVjLSOIhE9pV5MzAhOjl8mXjMaz3rz.h5tPCW', 'Admin', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-10-05', 'ABC1234770', 'admin', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1, '2025-10-05 19:49:37'),
+(3, 'Technician123', '$2y$10$hs2KTpM2i1OmFH/B1b1SNe6TgywvlDZZJwtaBrJMy3bpVgPjuqWsm', 'Technician', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-10-05', 'ABC1234770', 'technician', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1, '2025-10-05 19:50:16'),
+(4, 'User1234', '$2y$10$CEPsFUN54t1.ytOYbmk9mOix5Upr14nFpSSCtYaCCIt9i4m/ju/kK', 'User', 'APHICHAT', 'aphichat.se@ku.th', '0840780999', '2025-10-05', 'ABC1234770', 'user', NULL, 0, NULL, NULL, '', '', NULL, 0, NULL, 1, '2025-10-05 19:50:42');
 
 --
 -- Indexes for dumped tables
@@ -396,13 +328,16 @@ ALTER TABLE `backup_codes`
 -- Indexes for table `buildings`
 --
 ALTER TABLE `buildings`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `buildings_org_fk` (`org_id`);
 
 --
 -- Indexes for table `lifts`
 --
 ALTER TABLE `lifts`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `lifts_org_fk` (`org_id`),
+  ADD KEY `lifts_building_fk` (`building_id`);
 
 --
 -- Indexes for table `organizations`
@@ -430,7 +365,11 @@ ALTER TABLE `recovery_otps`
 -- Indexes for table `report`
 --
 ALTER TABLE `report`
-  ADD PRIMARY KEY (`rp_id`);
+  ADD PRIMARY KEY (`rp_id`),
+  ADD KEY `report_user_fk` (`user_id`),
+  ADD KEY `report_org_fk` (`org_id`),
+  ADD KEY `report_building_fk` (`building_id`),
+  ADD KEY `report_lift_fk` (`lift_id`);
 
 --
 -- Indexes for table `status_logs`
@@ -442,13 +381,19 @@ ALTER TABLE `status_logs`
 -- Indexes for table `task`
 --
 ALTER TABLE `task`
-  ADD PRIMARY KEY (`tk_id`);
+  ADD PRIMARY KEY (`tk_id`),
+  ADD KEY `task_report_fk` (`rp_id`),
+  ADD KEY `task_user_fk` (`user_id`),
+  ADD KEY `task_org_fk` (`org_id`),
+  ADD KEY `task_building_fk` (`building_id`),
+  ADD KEY `task_lift_fk` (`lift_id`);
 
 --
 -- Indexes for table `task_status`
 --
 ALTER TABLE `task_status`
-  ADD PRIMARY KEY (`tk_status_id`);
+  ADD PRIMARY KEY (`tk_status_id`),
+  ADD KEY `task_status_task_fk` (`tk_id`);
 
 --
 -- Indexes for table `tools`
@@ -476,7 +421,8 @@ ALTER TABLE `twofa_settings`
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `users_org_fk` (`org_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -486,25 +432,25 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `backup_codes`
 --
 ALTER TABLE `backup_codes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `buildings`
 --
 ALTER TABLE `buildings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `lifts`
 --
 ALTER TABLE `lifts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `organizations`
 --
 ALTER TABLE `organizations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `otp_tokens`
@@ -522,7 +468,7 @@ ALTER TABLE `recovery_otps`
 -- AUTO_INCREMENT for table `report`
 --
 ALTER TABLE `report`
-  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `rp_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `status_logs`
@@ -534,13 +480,13 @@ ALTER TABLE `status_logs`
 -- AUTO_INCREMENT for table `task`
 --
 ALTER TABLE `task`
-  MODIFY `tk_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `tk_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `task_status`
 --
 ALTER TABLE `task_status`
-  MODIFY `tk_status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `tk_status_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tools`
@@ -564,17 +510,68 @@ ALTER TABLE `twofa_settings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Constraints for dumped tables
 --
 
 --
+-- Constraints for table `buildings`
+--
+ALTER TABLE `buildings`
+  ADD CONSTRAINT `buildings_org_fk` FOREIGN KEY (`org_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `lifts`
+--
+ALTER TABLE `lifts`
+  ADD CONSTRAINT `lifts_building_fk` FOREIGN KEY (`building_id`) REFERENCES `buildings` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `lifts_org_fk` FOREIGN KEY (`org_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `otp_tokens`
 --
 ALTER TABLE `otp_tokens`
   ADD CONSTRAINT `otp_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `report`
+--
+ALTER TABLE `report`
+  ADD CONSTRAINT `report_building_fk` FOREIGN KEY (`building_id`) REFERENCES `buildings` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `report_lift_fk` FOREIGN KEY (`lift_id`) REFERENCES `lifts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `report_org_fk` FOREIGN KEY (`org_id`) REFERENCES `organizations` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `report_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task`
+--
+ALTER TABLE `task`
+  ADD CONSTRAINT `task_building_fk` FOREIGN KEY (`building_id`) REFERENCES `buildings` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `task_lift_fk` FOREIGN KEY (`lift_id`) REFERENCES `lifts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `task_org_fk` FOREIGN KEY (`org_id`) REFERENCES `organizations` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `task_report_fk` FOREIGN KEY (`rp_id`) REFERENCES `report` (`rp_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `task_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `task_status`
+--
+ALTER TABLE `task_status`
+  ADD CONSTRAINT `task_status_task_fk` FOREIGN KEY (`tk_id`) REFERENCES `task` (`tk_id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `twofa_reset_logs`
+--
+ALTER TABLE `twofa_reset_logs`
+  ADD CONSTRAINT `twofa_reset_admin_fk` FOREIGN KEY (`admin_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `twofa_reset_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `users_org_fk` FOREIGN KEY (`org_id`) REFERENCES `organizations` (`id`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

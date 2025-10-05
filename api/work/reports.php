@@ -139,8 +139,8 @@ function handleGet(PDO $db, array $user): void {
         /* ---------- END OPTIONS MODE ---------- */
 
         /* ---------- PROGRESS MODE ----------
-           GET /api/work/reports.php?progress=1&rp_id=7
-           หรือ  /api/work/reports.php?progress=1&tk_id=5
+            GET /api/work/reports.php?progress=1&rp_id=7
+            หรือ  /api/work/reports.php?progress=1&tk_id=5
         ----------------------------------- */
         if (isset($_GET['progress']) && $_GET['progress'] === '1') {
             $rp_id = isset($_GET['rp_id']) ? (int)$_GET['rp_id'] : 0;
@@ -169,20 +169,20 @@ function handleGet(PDO $db, array $user): void {
                        (SELECT t.tk_id
                           FROM task t
                          WHERE t.rp_id = r.rp_id
-                         ORDER BY t.tk_id DESC
-                         LIMIT 1) AS latest_tk_id,
+                          ORDER BY t.tk_id DESC
+                          LIMIT 1) AS latest_tk_id,
                        (SELECT t.tk_status
                           FROM task t
                          WHERE t.rp_id = r.rp_id
-                         ORDER BY t.tk_id DESC
-                         LIMIT 1) AS latest_tk_status
-                  FROM report r
+                          ORDER BY t.tk_id DESC
+                          LIMIT 1) AS latest_tk_status
+                      FROM report r
              LEFT JOIN organizations o ON r.org_id = o.id
              LEFT JOIN buildings b     ON r.building_id = b.id
              LEFT JOIN lifts l         ON r.lift_id = l.id
              LEFT JOIN users u         ON r.user_id = u.id
-                 WHERE r.rp_id = :id
-                   AND r.user_id = :uid";
+                   WHERE r.rp_id = :id
+                     AND r.user_id = :uid";
             $stmt = $db->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->bindParam(':uid', $uid, PDO::PARAM_INT);
@@ -211,20 +211,20 @@ function handleGet(PDO $db, array $user): void {
                        (SELECT t.tk_id
                           FROM task t
                          WHERE t.rp_id = r.rp_id
-                         ORDER BY t.tk_id DESC
-                         LIMIT 1) AS latest_tk_id,
+                          ORDER BY t.tk_id DESC
+                          LIMIT 1) AS latest_tk_id,
                        (SELECT t.tk_status
                           FROM task t
                          WHERE t.rp_id = r.rp_id
-                         ORDER BY t.tk_id DESC
-                         LIMIT 1) AS latest_tk_status
-                  FROM report r
+                          ORDER BY t.tk_id DESC
+                          LIMIT 1) AS latest_tk_status
+                      FROM report r
              LEFT JOIN organizations o ON r.org_id = o.id
              LEFT JOIN buildings b     ON r.building_id = b.id
              LEFT JOIN lifts l         ON r.lift_id = l.id
              LEFT JOIN users u         ON r.user_id = u.id
-                 WHERE r.org_id = :org_id
-                   AND r.user_id = :uid
+                   WHERE r.org_id = :org_id
+                     AND r.user_id = :uid
               ORDER BY r.date_rp DESC";
             $stmt = $db->prepare($query);
             $stmt->bindParam(':org_id', $org_id, PDO::PARAM_INT);
@@ -248,19 +248,19 @@ function handleGet(PDO $db, array $user): void {
                    (SELECT t.tk_id
                       FROM task t
                      WHERE t.rp_id = r.rp_id
-                     ORDER BY t.tk_id DESC
-                     LIMIT 1) AS latest_tk_id,
+                      ORDER BY t.tk_id DESC
+                      LIMIT 1) AS latest_tk_id,
                    (SELECT t.tk_status
                       FROM task t
                      WHERE t.rp_id = r.rp_id
-                     ORDER BY t.tk_id DESC
-                     LIMIT 1) AS latest_tk_status
-              FROM report r
+                      ORDER BY t.tk_id DESC
+                      LIMIT 1) AS latest_tk_status
+                  FROM report r
          LEFT JOIN organizations o ON r.org_id = o.id
          LEFT JOIN buildings b     ON r.building_id = b.id
          LEFT JOIN lifts l         ON r.lift_id = l.id
          LEFT JOIN users u         ON r.user_id = u.id
-             WHERE r.user_id = :uid
+               WHERE r.user_id = :uid
           ORDER BY r.date_rp DESC";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':uid', $uid, PDO::PARAM_INT);
@@ -303,9 +303,9 @@ function handlePost(PDO $db, array $user): void {
 
         // validate lift exists + relation
         $checkQuery = "SELECT l.id, l.building_id, b.org_id
-                         FROM lifts l
-                    LEFT JOIN buildings b ON b.id = l.building_id
-                        WHERE l.id = :lift_id";
+                          FROM lifts l
+                     LEFT JOIN buildings b ON b.id = l.building_id
+                         WHERE l.id = :lift_id";
         $checkStmt = $db->prepare($checkQuery);
         $checkStmt->bindParam(':lift_id', $lift_id, PDO::PARAM_INT);
         $checkStmt->execute();
@@ -327,7 +327,7 @@ function handlePost(PDO $db, array $user): void {
         }
 
         $ins = "INSERT INTO report (date_rp, user_id, org_id, building_id, lift_id, detail)
-                VALUES (:date_rp, :user_id, :org_id, :building_id, :lift_id, :detail)";
+                 VALUES (:date_rp, :user_id, :org_id, :building_id, :lift_id, :detail)";
         $stmt = $db->prepare($ins);
         $stmt->bindParam(':date_rp', $date_rp);
         $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
@@ -352,20 +352,20 @@ function handlePost(PDO $db, array $user): void {
                    (SELECT t.tk_id
                       FROM task t
                      WHERE t.rp_id = r.rp_id
-                     ORDER BY t.tk_id DESC
-                     LIMIT 1) AS latest_tk_id,
+                      ORDER BY t.tk_id DESC
+                      LIMIT 1) AS latest_tk_id,
                    (SELECT t.tk_status
                       FROM task t
                      WHERE t.rp_id = r.rp_id
-                     ORDER BY t.tk_id DESC
-                     LIMIT 1) AS latest_tk_status
-              FROM report r
+                      ORDER BY t.tk_id DESC
+                      LIMIT 1) AS latest_tk_status
+                  FROM report r
          LEFT JOIN organizations o ON r.org_id = o.id
          LEFT JOIN buildings b     ON r.building_id = b.id
          LEFT JOIN lifts l         ON r.lift_id = l.id
          LEFT JOIN users u         ON r.user_id = u.id
-             WHERE r.rp_id = :id
-               AND r.user_id = :uid";
+               WHERE r.rp_id = :id
+                 AND r.user_id = :uid";
         $st2 = $db->prepare($select);
         $st2->bindParam(':id', $report_id, PDO::PARAM_INT);
         $st2->bindParam(':uid', $user_id, PDO::PARAM_INT);
@@ -443,11 +443,11 @@ function handlePut(PDO $db, array $user): void {
         }
 
         $upd = "UPDATE report
-                   SET date_rp   = :date_rp,
-                       org_id    = :org_id,
+                   SET date_rp     = :date_rp,
+                       org_id      = :org_id,
                        building_id = :building_id,
-                       lift_id   = :lift_id,
-                       detail    = :detail
+                       lift_id     = :lift_id,
+                       detail      = :detail
                  WHERE rp_id = :rp_id AND user_id = :uid";
         $stmt = $db->prepare($upd);
         $stmt->bindParam(':rp_id', $rp_id, PDO::PARAM_INT);
@@ -473,20 +473,20 @@ function handlePut(PDO $db, array $user): void {
                    (SELECT t.tk_id
                       FROM task t
                      WHERE t.rp_id = r.rp_id
-                     ORDER BY t.tk_id DESC
-                     LIMIT 1) AS latest_tk_id,
+                      ORDER BY t.tk_id DESC
+                      LIMIT 1) AS latest_tk_id,
                    (SELECT t.tk_status
                       FROM task t
                      WHERE t.rp_id = r.rp_id
-                     ORDER BY t.tk_id DESC
-                     LIMIT 1) AS latest_tk_status
-              FROM report r
+                      ORDER BY t.tk_id DESC
+                      LIMIT 1) AS latest_tk_status
+                  FROM report r
          LEFT JOIN organizations o ON r.org_id = o.id
          LEFT JOIN buildings b     ON r.building_id = b.id
          LEFT JOIN lifts l         ON r.lift_id = l.id
          LEFT JOIN users u         ON r.user_id = u.id
-             WHERE r.rp_id = :id
-               AND r.user_id = :uid";
+               WHERE r.rp_id = :id
+                 AND r.user_id = :uid";
         $st2 = $db->prepare($select);
         $st2->bindParam(':id', $rp_id, PDO::PARAM_INT);
         $st2->bindParam(':uid', $user_id, PDO::PARAM_INT);
@@ -573,12 +573,14 @@ function handleDelete(PDO $db, array $user): void {
 function fetchTaskProgress(PDO $db, int $uid, ?int $rp_id = null, ?int $tk_id = null): array {
     // 1) ระบุ tk_id มา → ตรวจสิทธิ์ผ่าน report ที่ task นั้นผูกอยู่
     if (!empty($tk_id) && $tk_id > 0) {
-        $q = "SELECT t.*
-                FROM task t
-                JOIN report r ON r.rp_id = t.rp_id
-               WHERE t.tk_id = :tk_id
-                 AND r.user_id = :uid
-               LIMIT 1";
+        $q = "SELECT t.*, 
+                     L.lift_name /* <--- เพิ่ม: ดึงชื่อลิฟต์มาด้วย */
+                 FROM task t
+                 JOIN report r ON r.rp_id = t.rp_id
+                 LEFT JOIN lifts L ON L.id = t.lift_id /* <--- เพิ่ม: Join ตาราง lifts */
+                WHERE t.tk_id = :tk_id
+                  AND r.user_id = :uid
+                LIMIT 1";
         $st = $db->prepare($q);
         $st->execute([':tk_id' => $tk_id, ':uid' => $uid]);
         $task = $st->fetch(PDO::FETCH_ASSOC);
@@ -603,11 +605,13 @@ function fetchTaskProgress(PDO $db, int $uid, ?int $rp_id = null, ?int $tk_id = 
             return ['task' => null, 'statuses' => []];
         }
 
-        $q = "SELECT *
-                FROM task
-               WHERE rp_id = :rp
-            ORDER BY tk_id DESC
-               LIMIT 1";
+        $q = "SELECT t.*, 
+                     L.lift_name /* <--- เพิ่ม: ดึงชื่อลิฟต์มาด้วย */
+                 FROM task t /* <--- เปลี่ยนเป็นใช้ alias 't' */
+                 LEFT JOIN lifts L ON L.id = t.lift_id /* <--- เพิ่ม: Join ตาราง lifts */
+                WHERE t.rp_id = :rp
+             ORDER BY t.tk_id DESC
+                LIMIT 1";
         $st = $db->prepare($q);
         $st->execute([':rp' => $rp_id]);
         $task = $st->fetch(PDO::FETCH_ASSOC);

@@ -20,8 +20,9 @@ RewriteRule ^api/elevator/lifts/?$ api/elevator/lifts.php [L,QSA]
 
 RewriteRule ^api/work/tasks/?$ api/work/tasks.php [L,QSA]
 
-RewriteRule ^api/lifts/call_lift/?$ api/endpoints/call_lift.php [L,QSA]
-RewriteRule ^api/lifts/get_lift_status/?$ api/endpoints/get_lift_status.php [L,QSA]
+RewriteRule ^api/lifts/call_lift/?$ api/lifts/call_lift.php [L,QSA]
+RewriteRule ^api/lifts/get_lift_status/?$ api/lifts/get_lift_status.php [L,QSA]
+RewriteRule ^api/lifts/stream_status/?$ api/lifts/stream_status.php [L,QSA]
 
 RewriteRule ^api/user/profile/?$ api/user/profile.php [L,QSA]
 

@@ -26,18 +26,31 @@ try {
     $tk_id   = (int)($payload['tk_id'] ?? 0);
     $status  = trim((string)($payload['tk_status'] ?? ''));
     $detail  = trim((string)($payload['detail'] ?? ''));
+    $startDate = trim((string)($payload['start_date'] ?? ''));
+    $expectedEndDate = trim((string)($payload['expected_end_date'] ?? ''));
   } else {
     $tk_id   = (int)($_POST['tk_id'] ?? 0);
     $status  = trim((string)($_POST['tk_status'] ?? ''));
     $detail  = trim((string)($_POST['detail'] ?? ''));
+    $startDate = trim((string)($_POST['start_date'] ?? ''));
+    $expectedEndDate = trim((string)($_POST['expected_end_date'] ?? ''));
   }
 
-  // ตรวจสอบค่า status กับ enum ใหม่
-  $validStatuses = ['assign','preparing','progress','test','complete'];
+  // ตรวจสอบค่า status กับ enum ใหม่ (ไม่รวม test)
+  $validStatuses = ['assign','preparing','progress','complete'];
   if ($tk_id <= 0 || !in_array($status, $validStatuses, true)) {
     http_response_code(400);
     echo json_encode(['success'=>false,'message'=>'Invalid tk_id or tk_status'], JSON_UNESCAPED_UNICODE);
     exit;
+  }
+
+  // ถ้าเป็นการรับงาน (assign -> preparing) ต้องมีวันที่
+  if ($status === 'preparing') {
+    if (empty($startDate) || empty($expectedEndDate)) {
+      http_response_code(400);
+      echo json_encode(['success'=>false,'message'=>'กรุณาระบุวันเริ่มงานและวันคาดว่าจะเสร็จ'], JSON_UNESCAPED_UNICODE);
+      exit;
+    }
   }
 
   $pdo = Database::getConnection();
@@ -56,6 +69,16 @@ try {
   // update task
   $upd = $pdo->prepare("UPDATE task SET tk_status = :s WHERE tk_id = :id");
   $upd->execute([':s'=>$status, ':id'=>$tk_id]);
+
+  // ถ้าเป็น preparing ให้อัปเดตวันที่ด้วย
+  if ($status === 'preparing') {
+    $dateUpd = $pdo->prepare("UPDATE task SET start_date = :sd, expected_end_date = :ed WHERE tk_id = :id");
+    $dateUpd->execute([
+      ':sd' => $startDate,
+      ':ed' => $expectedEndDate,
+      ':id' => $tk_id
+    ]);
+  }
 
   // แนบไฟล์ถ้ามี
   $fileUrl = null;

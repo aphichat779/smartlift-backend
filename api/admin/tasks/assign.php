@@ -9,8 +9,13 @@ require_once __DIR__ . '/../../../utils/ValidationHelper.php';
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    // ต้องเป็นแอดมิน
-    $user = requireAuth(['admin']); // << แก้จุดนี้
+    // เปลี่ยนจาก ['admin'] เป็น ['super_admin', 'admin']
+    $user = requireAuth(['super_admin', 'admin']);
+    
+    // ตรวจสอบบทบาท
+    $role = $user['role'] ?? '';
+    $isAdmin = ($role === 'admin');
+    $isSuperAdmin = ($role === 'super_admin');
 
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
 
@@ -31,7 +36,7 @@ try {
     $pdo = Database::getConnection();
     $pdo->beginTransaction();
 
-    // ดึง report
+    // ดึง report (ไม่จำกัด org)
     $stmt = $pdo->prepare("SELECT r.*, o.org_name, b.building_name
                            FROM report r
                            LEFT JOIN organizations o ON o.id = r.org_id
@@ -39,17 +44,24 @@ try {
                            WHERE r.rp_id = :rp");
     $stmt->execute([':rp' => $rp_id]);
     $report = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$report) throw new Exception('Report not found');
+    
+    if (!$report) {
+        throw new Exception('Report not found');
+    }
 
-    // ตรวจช่าง
-    $ut = $pdo->prepare("SELECT id, username FROM users 
+    // ตรวจช่าง (ไม่จำกัด org)
+    $ut = $pdo->prepare("SELECT id, username, org_id, first_name, last_name 
+                         FROM users 
                          WHERE id = :uid AND role = 'technician' AND is_active = 1");
     $ut->execute([':uid' => $technicianId]);
     $tech = $ut->fetch(PDO::FETCH_ASSOC);
-    if (!$tech) throw new Exception('Technician not found or inactive');
+    
+    if (!$tech) {
+        throw new Exception('Technician not found or inactive');
+    }
 
     // map สถานะหลัก
-    $tk_status = '1'; // assigned
+    $tk_status = 'assign';
     $toolsJson = json_encode($tools, JSON_UNESCAPED_UNICODE);
 
     // insert task
@@ -75,7 +87,7 @@ try {
     // timeline แรก
     $ss = $pdo->prepare("INSERT INTO task_status (tk_id, `status`, `time`, `detail`, `section`)
                          VALUES (:tk_id, 'assign', NOW(), :detail, 'assignment')");
-    $ss->execute([':tk_id' => $tk_id, ':detail' => 'Assigned by admin']);
+    $ss->execute([':tk_id' => $tk_id, ':detail' => 'Assigned by ' . $role]);
 
     $pdo->commit();
 

@@ -1,5 +1,6 @@
 <?php
 // config/config.php
+
 // JWT Configuration
 define('JWT_SECRET_KEY', 'smartlift_secret_key_2025_very_secure');
 define('JWT_ALGORITHM', 'HS256');
@@ -19,7 +20,7 @@ define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_TIME', 900); // 15 minutes
 
 // CORS Configuration
-define('ALLOWED_ORIGINS', ['http://localhost:3000', 'http://localhost:5173', 'http://172.20.10.4:5173']);
+define('ALLOWED_ORIGINS', ['http://localhost:3000', 'http://localhost:5173', 'http://172.20.10.4:5173', 'http://172.20.10.4']);
 
 // Email Configuration (for OTP)
 define('SMTP_HOST', 'smtp.gmail.com');

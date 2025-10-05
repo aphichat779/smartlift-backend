@@ -9,9 +9,16 @@ require_once __DIR__ . '/../../../utils/JWTHelper.php';
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    $user = requireAuth(['admin']); 
-
+    // เปลี่ยนจาก ['admin'] เป็น ['super_admin', 'admin', 'technician']
+    $user = requireAuth(['super_admin', 'admin', 'technician']);
+    
     $pdo = Database::getConnection();
+    
+    // ตรวจสอบบทบาท
+    $role = $user['role'] ?? '';
+    $isAdmin = ($role === 'admin');
+    $isSuperAdmin = ($role === 'super_admin');
+    $isTechnician = ($role === 'technician');
 
     $date = $_GET['date'] ?? null; // 'YYYY-MM-DD'
     $q    = $_GET['q'] ?? null;
@@ -28,6 +35,7 @@ try {
         $args[':q'] = "%$q%";
     }
 
+    // admin, super_admin, technician ดูได้ทุกรายงาน (ไม่จำกัด org)
     $sql = "SELECT r.rp_id, r.date_rp, r.user_id, r.org_id, r.building_id, r.lift_id, r.detail,
                    o.org_name, b.building_name, l.lift_name,
                    (SELECT COUNT(*) FROM task t WHERE t.rp_id = r.rp_id) AS assigned_count
@@ -35,6 +43,7 @@ try {
             LEFT JOIN organizations o ON o.id = r.org_id
             LEFT JOIN buildings b ON b.id = r.building_id
             LEFT JOIN lifts l ON l.id = r.lift_id";
+            
     if ($where) $sql .= " WHERE " . implode(' AND ', $where);
     $sql .= " ORDER BY r.rp_id DESC LIMIT 200";
 

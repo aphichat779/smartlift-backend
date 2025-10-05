@@ -34,7 +34,9 @@ try {
             t.rp_id,
             t.user_id,
             t.tk_data,
-            t.tk_status,                        -- enum (assign, preparing, progress, test, complete)
+            t.tk_status,                        -- enum (assign, preparing, progress, complete)
+            t.start_date,
+            t.expected_end_date,
             r.detail        AS report_detail,
             r.date_rp,
             o.org_name,

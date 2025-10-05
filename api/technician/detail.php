@@ -36,6 +36,8 @@ try {
             t.user_id,
             t.tk_data,
             t.tk_status,
+            t.start_date,
+            t.expected_end_date,
             r.detail        AS report_detail,
             r.date_rp,
             o.org_name,

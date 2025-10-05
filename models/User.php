@@ -383,7 +383,7 @@ class User
         if (!$check->fetch(PDO::FETCH_ASSOC)) return false;
 
         if ($scopeOrgId !== null && $orgId !== $scopeOrgId) {
-            // org_admin ห้ามย้ายออกนอก org ตัวเอง
+            // admin ห้ามย้ายออกนอก org ตัวเอง
             return false;
         }
 
