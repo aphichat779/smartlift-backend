@@ -107,6 +107,33 @@ function unassignedReports(PDO $pdo, ?int $orgId, bool $allOrgs): array {
     return fetchAll($pdo, $sql, $args);
 }
 
+/**
+ * NEW: Fetches all reports for a specific organization/user, including linked task status.
+ */
+function myReports(PDO $pdo, int $orgId): array {
+    $sql = "
+        SELECT 
+            r.rp_id AS id,
+            DATE_FORMAT(CONVERT_TZ(r.created_at, '+00:00', @@session.time_zone), '%Y-%m-%dT%H:%i:%s') AS created_at,
+            r.date_rp AS date,
+            r.detail,
+            l.lift_name AS lift,
+            l.id AS lift_id,
+            b.building_name AS building,
+            b.id AS building_id,
+            t.tk_id,
+            t.tk_status
+        FROM report r
+        JOIN lifts l ON l.id = r.lift_id
+        JOIN buildings b ON b.id = r.building_id
+        LEFT JOIN task t ON t.rp_id = r.rp_id
+        WHERE r.org_id = :o
+        ORDER BY r.created_at DESC
+        LIMIT 20";
+    return fetchAll($pdo, $sql, ['o' => $orgId]);
+}
+
+
 function ongoingTasks(PDO $pdo, ?int $orgId, bool $allOrgs): array {
     $where = $allOrgs ? '' : 'WHERE t.org_id = :o';
     $sql = "
@@ -131,10 +158,14 @@ function ongoingTasks(PDO $pdo, ?int $orgId, bool $allOrgs): array {
 function liftBitBoard(PDO $pdo, ?int $orgId, bool $allOrgs): array {
     $where = $allOrgs ? '' : 'WHERE l.org_id = :o';
     $sql = "
-        SELECT l.lift_name AS name,
+        SELECT l.id,
+               l.lift_name AS name,
                COALESCE(NULLIF(l.max_level, 0), 8) AS floors,
-               l.up_status, l.down_status, l.car_status
+               l.up_status, l.down_status, l.car_status,
+               b.building_name AS building,
+               b.id AS building_id
         FROM lifts l
+        LEFT JOIN buildings b ON b.id = l.building_id
         $where
         ORDER BY l.updated_at DESC
         LIMIT 30";
@@ -147,6 +178,7 @@ function liftBitBoard(PDO $pdo, ?int $orgId, bool $allOrgs): array {
         $down = bitPad((string)$r['down_status'], 8);
         $car = bitPad((string)$r['car_status'], 8);
         $out[] = [
+            'id' => (int) $r['id'], // ID
             'name' => $r['name'],
             'floors' => $floors,
             'current' => currentFloorFromCarBits($car),
@@ -154,6 +186,8 @@ function liftBitBoard(PDO $pdo, ?int $orgId, bool $allOrgs): array {
             'up' => $up,
             'down' => $down,
             'car' => $car,
+            'building' => $r['building'] ?? 'N/A', // ชื่ออาคาร
+            'building_id' => $r['building_id'], // ID อาคาร
         ];
     }
     return $out;
@@ -174,14 +208,23 @@ function recentActivity(PDO $pdo, ?int $orgId, bool $allOrgs): array {
 }
 
 function buildDashboardPayload(PDO $pdo, string $roleLabel, ?int $orgId, bool $allOrgs): array {
-    return [
+    $payload = [
         'success' => true,
         'role' => $roleLabel,
         'kpis' => kpisForScope($pdo, $roleLabel, $orgId, $allOrgs),
-        'reportsUnassigned' => unassignedReports($pdo, $orgId, $allOrgs),
-        'tasksOngoing' => ongoingTasks($pdo, $orgId, $allOrgs),
         'liftBits' => liftBitBoard($pdo, $orgId, $allOrgs),
         'activity' => recentActivity($pdo, $orgId, $allOrgs),
     ];
+
+    if ($roleLabel === 'user') {
+        // สำหรับ User: ดึงรายงานทั้งหมดของเขา (รวม Task Status)
+        $payload['reports'] = myReports($pdo, $orgId);
+    } else {
+        // สำหรับ Admin/Technician/SuperAdmin: ดึงรายงานที่ยังไม่ถูกจัดสรร และ tasks ที่กำลังดำเนินการ
+        $payload['reportsUnassigned'] = unassignedReports($pdo, $orgId, $allOrgs);
+        $payload['tasksOngoing'] = ongoingTasks($pdo, $orgId, $allOrgs);
+    }
+
+    return $payload;
 }
 ?>

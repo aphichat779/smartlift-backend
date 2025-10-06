@@ -51,16 +51,37 @@ class RedisClient {
         try {
             $redis = new Redis();
             $redis->connect($host, $port, $timeout);
-
             if (!empty($pass)) {
                 $redis->auth($pass);
             }
-
+            // $redis->select(0); // ถ้าใช้ DB index อื่นค่อยเปิด
             self::$conn = $redis;
         } catch (RedisException $e) {
             throw new RuntimeException('Redis connection failed: ' . $e->getMessage(), previous: $e);
         }
 
         return self::$conn;
+    }
+
+    /** ใช้สำหรับ SUBSCRIBE/PSUBSCRIBE (blocking) — แยกคอนเนกชันจากตัวทั่วไป */
+    public static function getSubscriberConnection(): Redis {
+        $host = getenv('REDIS_HOST') ?: '52.221.67.113';
+        $port = (int)(getenv('REDIS_PORT') ?: 6379);
+        $pass = getenv('REDIS_PASS') ?: 'kuse@fse2023';
+        $timeout = 1.5;
+
+        try {
+            $sub = new Redis();
+            $sub->connect($host, $port, $timeout);
+            if (!empty($pass)) {
+                $sub->auth($pass);
+            }
+            // $sub->select(0); // ถ้าใช้ DB index อื่นค่อยเปิด
+            // ทำให้ callback ของ subscribe ตื่นเป็นระยะ เพื่อเช็ค connection_aborted()
+            $sub->setOption(Redis::OPT_READ_TIMEOUT, 1);
+            return $sub;
+        } catch (RedisException $e) {
+            throw new RuntimeException('Redis subscriber connection failed: ' . $e->getMessage(), previous: $e);
+        }
     }
 }
