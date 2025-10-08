@@ -4,7 +4,7 @@
 // JWT Configuration
 define('JWT_SECRET_KEY', 'smartlift_secret_key_2025_very_secure');
 define('JWT_ALGORITHM', 'HS256');
-define('JWT_EXPIRATION_TIME', 3600); // 1 hour
+define('JWT_EXPIRATION_TIME', 86400 * 365); // จำกัดเวลาโทเค็น
 
 // 2FA Configuration
 define('TOTP_ISSUER', 'SmartLift');

@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>SmartLift — Update Tester (Redis + SSE + hex12)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{--ok:#0a7;--err:#c00;}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial,sans-serif;margin:24px;line-height:1.5;color:#222}
+  fieldset{border:1px solid #e5e7eb;padding:16px;border-radius:10px;margin-bottom:16px}
+  legend{padding:0 6px;color:#111;font-weight:600}
+  label{display:block;margin:6px 0 4px;font-size:14px}
+  input,select{padding:8px;border:1px solid #ddd;border-radius:8px;min-width:220px}
+  button{padding:9px 14px;border:0;border-radius:8px;background:#e5e7eb;cursor:pointer}
+  button.primary{background:#16a34a;color:#fff}
+  button.danger{background:#ef4444;color:#fff}
+  button:disabled{opacity:.6;cursor:not-allowed}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .success{color:var(--ok)} .error{color:var(--err)} .small{color:#666;font-size:12px}
+  pre{background:#111;color:#0f0;padding:12px;border-radius:8px;overflow:auto;min-height:80px}
+  .log{background:#fafafa;border:1px solid #eee;padding:10px;border-radius:8px;max-height:280px;overflow:auto}
+</style>
+</head>
+<body>
+<h1>SmartLift — Update Tester</h1>
+
+<!-- เลือกลิฟต์ -->
+<fieldset>
+  <legend>เลือก ลิฟต์ ที่จะอัปเดต</legend>
+  <div class="row">
+    <div>
+      <label for="liftSelect">Lift</label>
+      <select id="liftSelect"></select>
+      <div class="small">เมื่อเลือก ระบบจะโหลดค่าปัจจุบันจาก Redis มาใส่ฟอร์มให้</div>
+    </div>
+    <div>
+      <button id="reloadLiftsBtn">Reload Lifts</button>
+      <span id="loadLiftsStatus" class="small"></span>
+    </div>
+  </div>
+</fieldset>
+
+<!-- Payload -->
+<fieldset>
+  <legend>Update Payload</legend>
+  <label>lift_state (<b>hex 12</b>)</label>
+  <input id="lift_state" value="000000000000" maxlength="12">
+  <label>up_status (hex 8)</label>
+  <input id="up_status" value="00000000" maxlength="8">
+  <label>down_status (hex 8)</label>
+  <input id="down_status" value="00000000" maxlength="8">
+  <label>car_status (hex 8)</label>
+  <input id="car_status" value="00000000" maxlength="8"><br><br>
+  <button id="sendBtn" class="primary">Send Update</button>
+  <button id="randomBtn">Random Demo</button>
+  <span id="sendStatus"></span>
+  <pre id="responseBox">// response here</pre>
+</fieldset>
+
+<!-- SSE -->
+<fieldset>
+  <legend>SSE Stream</legend>
+  <div class="row">
+    <button id="connectBtn" class="primary">Connect SSE</button>
+    <button id="disconnectBtn" class="danger" disabled>Disconnect</button>
+    <label class="row" style="gap:6px;margin:0">
+      <input type="checkbox" id="listenSelectedOnly" checked>
+      ฟังเฉพาะลิฟต์ที่เลือก
+    </label>
+    <span id="sseStatus" class="small"></span>
+  </div>
+  <div class="small" style="margin-top:8px">Events</div>
+  <div id="eventLog" class="log"></div>
+</fieldset>
+
+<script>
+/* ====== ปรับให้ตรง backend ของคุณ ====== */
+const baseUrl = "http://localhost/smartlift-backend";
+
+/* ====== utils ====== */
+const $ = (id)=>document.getElementById(id);
+const pad4 = (n)=>String(n).padStart(4,'0');
+const isHex = (s, len)=>/^[0-9a-fA-F]+$/.test(s) && (!len || s.length===len);
+function jsonPretty(x){ try{return JSON.stringify(x,null,2);}catch{return String(x);} }
+function appendLog(msg){
+  const time = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.textContent = `[${time}] ${msg}`;
+  $('eventLog').prepend(div);
+  while ($('eventLog').childNodes.length>300) $('eventLog').removeChild($('eventLog').lastChild);
+}
+
+/* ====== โหลดรายชื่อลิฟต์ (จาก Redis ผ่าน get_latest_status.php) ====== */
+async function loadLifts(){
+  $('loadLiftsStatus').textContent='กำลังโหลด...';
+  try{
+    const res  = await fetch(`${baseUrl}/api/lifts/get_latest_status.php`);
+    const data = await res.json();
+    const lifts = data?.lifts || {};
+    const sel = $('liftSelect');
+    sel.innerHTML = '';
+
+    Object.values(lifts).sort((a,b)=>Number(a.id)-Number(b.id)).forEach(l=>{
+      const opt = document.createElement('option');
+      opt.value = String(l.id);
+      opt.textContent = `${l.lift_name || 'Lift'}-${pad4(l.id)} (${l.org_name || '-'})`;
+      sel.appendChild(opt);
+    });
+
+    if (!sel.options.length){
+      // fallback กรณีไม่มีข้อมูล
+      [1,2,3,4,5,6,7,8].forEach(id=>{
+        const o=document.createElement('option');o.value=String(id);o.textContent=`Lift-${pad4(id)}`;sel.appendChild(o);
+      });
+    }
+
+    $('loadLiftsStatus').textContent='โหลดสำเร็จ';
+    setTimeout(()=>$('loadLiftsStatus').textContent='',1200);
+
+    // โหลดค่าปัจจุบันของตัวที่เลือก
+    await loadCurrentOfSelected();
+  }catch(e){
+    $('loadLiftsStatus').textContent='โหลดไม่สำเร็จ';
+    console.error(e);
+  }
+}
+
+/* ====== โหลดค่าปัจจุบันของลิฟต์ที่เลือก ====== */
+async function loadCurrentOfSelected(){
+  const id = $('liftSelect').value;
+  if (!id) return;
+  try{
+    const res  = await fetch(`${baseUrl}/api/lifts/get_latest_status.php?id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    const l    = data?.lifts?.[String(id)];
+    if (l){
+      $('lift_state').value  = String(l.lift_state_hex || '').toUpperCase().padEnd(12,'0').slice(0,12);
+      $('up_status').value   = String(l.up_status_hex   || '').toUpperCase().padStart(8,'0').slice(0,8);
+      $('down_status').value = String(l.down_status_hex || '').toUpperCase().padStart(8,'0').slice(0,8);
+      $('car_status').value  = String(l.car_status_hex  || '').toUpperCase().padStart(8,'0').slice(0,8);
+    }
+  }catch(err){ console.warn('loadCurrentOfSelected error', err); }
+}
+
+/* ====== ส่งอัปเดต ====== */
+$('sendBtn').onclick = async ()=>{
+  const lift_id    = $('liftSelect').value;
+  const lift_state = $('lift_state').value.trim().toUpperCase();
+  const up_status  = $('up_status').value.trim().toUpperCase();
+  const down_status= $('down_status').value.trim().toUpperCase();
+  const car_status = $('car_status').value.trim().toUpperCase();
+
+  if (!isHex(lift_state,12)) { alert('lift_state ต้องเป็นเลขฐาน 16 จำนวน 12 หลัก'); return; }
+  if (!isHex(up_status,8) || !isHex(down_status,8) || !isHex(car_status,8)) {
+    alert('up_status / down_status / car_status ต้องเป็นเลขฐาน 16 จำนวน 8 หลัก'); return;
+  }
+
+  $('sendStatus').textContent='sending...'; $('sendStatus').className='';
+  try{
+    const body = new URLSearchParams({lift_id, lift_state, up_status, down_status, car_status});
+    const res  = await fetch(`${baseUrl}/api/lifts/update_status.php`, {
+      method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body
+    });
+    const text = await res.text(); let json;
+    try{ json = JSON.parse(text); }catch{ json = { raw:text }; }
+    $('responseBox').textContent = jsonPretty(json);
+    $('sendStatus').textContent  = res.ok ? '✔ updated' : ('✖ '+res.status);
+    $('sendStatus').className    = res.ok ? 'success' : 'error';
+    if (res.ok) await loadCurrentOfSelected();
+  }catch(e){
+    $('sendStatus').textContent='network error';
+    $('sendStatus').className='error';
+  }
+};
+
+/* ====== สุ่มค่า demo ====== */
+$('randomBtn').onclick = ()=>{
+  const r4 = ()=>Math.floor(Math.random()*0xffff).toString(16).padStart(4,'0').toUpperCase();
+  const r8 = ()=>r4()+r4();
+  const r12= ()=>r8()+r4();
+  $('lift_state').value  = r12();
+  $('up_status').value   = r8();
+  $('down_status').value = r8();
+  $('car_status').value  = r8();
+};
+
+/* ====== SSE ====== */
+let es = null;
+
+$('connectBtn').onclick = ()=>{
+  if (es) return;
+  const only = $('listenSelectedOnly').checked;
+  const id   = $('liftSelect').value;
+
+  const qs = new URLSearchParams();
+  if (only && id) qs.set('ids', id);
+
+  es = new EventSource(`${baseUrl}/api/lifts/stream.php${qs.toString()?`?${qs}`:''}`);
+
+  es.addEventListener('open', ()=>{
+    $('sseStatus').textContent='connected';
+    $('sseStatus').className='success';
+    appendLog('SSE connected');
+  });
+
+  // เปลี่ยนจาก "error" เป็น "reconnecting..." เพื่อไม่ให้ผู้ใช้ตกใจ
+  es.addEventListener('error', ()=>{
+    $('sseStatus').textContent='reconnecting...';
+    $('sseStatus').className='small';
+    appendLog('SSE reconnecting...');
+  });
+
+  es.addEventListener('lifts', (ev)=> appendLog('lifts '+ev.data));
+  es.addEventListener('lift',  (ev)=> appendLog('lift  '+ev.data));
+
+  $('disconnectBtn').disabled=false;
+};
+
+$('disconnectBtn').onclick = ()=>{
+  if (es){ es.close(); es=null; appendLog('SSE disconnected'); }
+  $('sseStatus').textContent='disconnected';
+  $('sseStatus').className='';
+  $('disconnectBtn').disabled=true;
+};
+
+/* ====== bind & init ====== */
+$('liftSelect').addEventListener('change', loadCurrentOfSelected);
+$('reloadLiftsBtn').addEventListener('click', loadLifts);
+loadLifts();
+</script>
+</body>
+</html>

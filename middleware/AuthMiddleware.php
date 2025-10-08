@@ -1,13 +1,43 @@
 <?php
 // middleware/AuthMiddleware.php
+
+// -------------------
+// Global Polyfills (สำคัญสำหรับ MAMP)
+// -------------------
+if (!function_exists('getallheaders')) {
+    function getallheaders() {
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if (substr($name, 0, 5) == 'HTTP_') {
+                $name = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))));
+                $headers[$name] = $value;
+            }
+        }
+        // รวม Content-Type และ Content-Length ที่อาจหายไป
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            $headers['Content-Type'] = $_SERVER['CONTENT_TYPE'];
+        }
+        if (isset($_SERVER['CONTENT_LENGTH'])) {
+            $headers['Content-Length'] = $_SERVER['CONTENT_LENGTH'];
+        }
+        return $headers;
+    }
+}
+
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../utils/JWTHelper.php';
 
 class AuthMiddleware {
     public static function authenticate() {
         $headers = getallheaders();
+        // ตรวจสอบทั้ง 'Authorization' และ 'authorization' เพื่อความชัวร์
         $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] :
                      (isset($headers['authorization']) ? $headers['authorization'] : null);
+        
+        // บางเซิร์ฟเวอร์อาจใช้ HTTP_AUTHORIZATION
+        if (!$authHeader && isset($headers['HTTP_AUTHORIZATION'])) {
+             $authHeader = $headers['HTTP_AUTHORIZATION'];
+        }
 
         if (!$authHeader) {
             self::sendUnauthorized('Authorization header missing');
@@ -24,7 +54,7 @@ class AuthMiddleware {
             self::sendUnauthorized('Invalid or expired token');
         }
 
-        return $payload; // ควรมี ['id','role','org_id',...]
+        return $payload; // ควรมี ['id','role',...]
     }
 
     public static function requireAdmin() {
@@ -57,6 +87,10 @@ class AuthMiddleware {
         $headers = getallheaders();
         $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] :
                      (isset($headers['authorization']) ? $headers['authorization'] : null);
+        
+        if (!$authHeader && isset($headers['HTTP_AUTHORIZATION'])) {
+             $authHeader = $headers['HTTP_AUTHORIZATION'];
+        }
 
         if (!$authHeader) {
             return null;
@@ -70,7 +104,7 @@ class AuthMiddleware {
         return JWTHelper::decode($jwt);
     }
 
-    // --- เพิ่มเมธอดอรรถประโยชน์สำหรับตรวจบทบาทหลายค่า ---
+    // --- เมธอดอรรถประโยชน์สำหรับตรวจบทบาทหลายค่า ---
     public static function requireRoles(array $roles) {
         $user = self::authenticate(); // will exit on fail
         if (!in_array($user['role'] ?? '', $roles, true)) {
@@ -109,8 +143,8 @@ if (!function_exists('requireAuth')) {
         if (!empty($roles) && !in_array($user['role'] ?? '', $roles, true)) {
             http_response_code(403);
             echo json_encode([
-                "success"    => false,
-                "message"    => "Forbidden: role not allowed",
+                "success" => false,
+                "message" => "Forbidden: role not allowed",
                 "error_code" => "FORBIDDEN"
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             exit;
