@@ -94,7 +94,7 @@ function appendLog(msg){
 async function loadLifts(){
   $('loadLiftsStatus').textContent='กำลังโหลด...';
   try{
-    const res  = await fetch(`${baseUrl}/api/lifts/get_latest_status.php`);
+    const res  = await fetch(`${baseUrl}/api/lifts/data.php`);
     const data = await res.json();
     const lifts = data?.lifts || {};
     const sel = $('liftSelect');
@@ -130,7 +130,7 @@ async function loadCurrentOfSelected(){
   const id = $('liftSelect').value;
   if (!id) return;
   try{
-    const res  = await fetch(`${baseUrl}/api/lifts/get_latest_status.php?id=${encodeURIComponent(id)}`);
+    const res  = await fetch(`${baseUrl}/api/lifts/data.php?id=${encodeURIComponent(id)}`);
     const data = await res.json();
     const l    = data?.lifts?.[String(id)];
     if (l){
@@ -195,7 +195,7 @@ $('connectBtn').onclick = ()=>{
   const qs = new URLSearchParams();
   if (only && id) qs.set('ids', id);
 
-  es = new EventSource(`${baseUrl}/api/lifts/stream.php${qs.toString()?`?${qs}`:''}`);
+  es = new EventSource(`${baseUrl}/api/lifts/stream_status.php${qs.toString()?`?${qs}`:''}`);
 
   es.addEventListener('open', ()=>{
     $('sseStatus').textContent='connected';

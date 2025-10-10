@@ -35,8 +35,8 @@ try {
             t.user_id,
             t.tk_data,
             t.tk_status,                        -- enum (assign, preparing, progress, complete)
-            t.start_date,
-            t.expected_end_date,
+            -- t.start_date,                     -- ลบออก
+            -- t.expected_end_date,              -- ลบออก
             r.detail        AS report_detail,
             r.date_rp,
             o.org_name,
@@ -62,16 +62,9 @@ try {
         $row['tk_status_text'] = $row['tk_status'];
     }
 
-    echo json_encode([
-        'success' => true,
-        'count'   => count($rows),
-        'data'    => $rows
-    ], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => true, 'data' => $rows], JSON_UNESCAPED_UNICODE);
 
-} catch (Throwable $e) {
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'message' => $e->getMessage()
-    ], JSON_UNESCAPED_UNICODE);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success'=>false,'message'=>'An error occurred: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }

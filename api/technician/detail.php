@@ -28,7 +28,7 @@ try {
 
     $pdo = Database::getConnection();
 
-    // ดึงรายละเอียดงาน (และยืนยันว่าเป็นของช่างคนนี้)
+    // ✅ เพิ่ม task_start_date, assigned_by, user (responsible_user)
     $sql = "
         SELECT 
             t.tk_id,
@@ -36,14 +36,16 @@ try {
             t.user_id,
             t.tk_data,
             t.tk_status,
-            t.start_date,
-            t.expected_end_date,
-            r.detail        AS report_detail,
+            t.task_start_date,
+            t.assigned_by,
+            t.`user`             AS responsible_user,
+            -- องค์ประกอบสำหรับโชว์
+            r.detail             AS report_detail,
             r.date_rp,
             o.org_name,
             b.building_name,
             l.lift_name,
-            l.id            AS lift_real_id
+            l.id                 AS lift_real_id
         FROM task t
         LEFT JOIN report r        ON r.rp_id      = t.rp_id
         LEFT JOIN organizations o ON o.id         = r.org_id
@@ -62,7 +64,7 @@ try {
         exit;
     }
 
-    // timeline
+    // timeline (log) ของงาน
     $hsql = "
         SELECT tk_status_id, tk_id, status, time, detail, tk_status_tool AS file_url, section
         FROM task_status
@@ -74,16 +76,25 @@ try {
     $stmH->execute([':id' => $tk_id]);
     $history = $stmH->fetchAll(PDO::FETCH_ASSOC);
 
-    // เพิ่ม tk_status_text เพื่อความเข้ากันได้
-    $data['tk_status_text'] = $data['tk_status'];
-
     echo json_encode([
         'success' => true,
-        'data'    => $data,
-        'history' => $history
+        'data' => [
+            'tk_id'            => $data['tk_id'],
+            'tk_data'          => $data['tk_data'],
+            'tk_status'        => $data['tk_status'],
+            'task_start_date'  => $data['task_start_date'],
+            'assigned_by'      => $data['assigned_by'],
+            'responsible_user' => $data['responsible_user'],
+            'report_detail'    => $data['report_detail'],
+            'date_rp'          => $data['date_rp'],
+            'org_name'         => $data['org_name'],
+            'building_name'    => $data['building_name'],
+            'lift_name'        => $data['lift_name'],
+            'history'          => $history,
+        ]
     ], JSON_UNESCAPED_UNICODE);
 
-} catch (Throwable $e) {
-    http_response_code(400);
-    echo json_encode(['success'=>false,'message'=>$e->getMessage()], JSON_UNESCAPED_UNICODE);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success'=>false,'message'=>'An error occurred: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }

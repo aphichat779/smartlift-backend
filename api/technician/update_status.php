@@ -19,68 +19,74 @@ try {
     exit;
   }
 
-  // รับทั้ง JSON และ multipart/form-data
+  // รับได้ทั้ง JSON และ multipart/form-data
   $isJson = stripos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false;
   if ($isJson) {
-    $payload = json_decode(file_get_contents('php://input'), true) ?: [];
-    $tk_id   = (int)($payload['tk_id'] ?? 0);
-    $status  = trim((string)($payload['tk_status'] ?? ''));
-    $detail  = trim((string)($payload['detail'] ?? ''));
-    $startDate = trim((string)($payload['start_date'] ?? ''));
-    $expectedEndDate = trim((string)($payload['expected_end_date'] ?? ''));
+    $payload        = json_decode(file_get_contents('php://input'), true) ?: [];
+    $tk_id          = (int)($payload['tk_id'] ?? 0);
+    $status         = trim((string)($payload['tk_status'] ?? ''));
+    $detail         = trim((string)($payload['detail'] ?? ''));
+    $toolsJson      = trim((string)($payload['tools'] ?? ''));
+    $toolsTotalCost = (float)($payload['tools_total_cost'] ?? 0);
   } else {
-    $tk_id   = (int)($_POST['tk_id'] ?? 0);
-    $status  = trim((string)($_POST['tk_status'] ?? ''));
-    $detail  = trim((string)($_POST['detail'] ?? ''));
-    $startDate = trim((string)($_POST['start_date'] ?? ''));
-    $expectedEndDate = trim((string)($_POST['expected_end_date'] ?? ''));
+    $tk_id          = (int)($_POST['tk_id'] ?? 0);
+    $status         = trim((string)($_POST['tk_status'] ?? ''));
+    $detail         = trim((string)($_POST['detail'] ?? ''));
+    $toolsJson      = trim((string)($_POST['tools'] ?? ''));
+    $toolsTotalCost = (float)($_POST['tools_total_cost'] ?? 0);
   }
 
-  // ตรวจสอบค่า status กับ enum ใหม่ (ไม่รวม test)
-  $validStatuses = ['assign','preparing','progress','complete'];
-  if ($tk_id <= 0 || !in_array($status, $validStatuses, true)) {
+  if ($tk_id <= 0 || !in_array($status, ['assign', 'preparing', 'progress', 'complete'], true)) {
     http_response_code(400);
-    echo json_encode(['success'=>false,'message'=>'Invalid tk_id or tk_status'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success'=>false,'message'=>'Invalid input data'], JSON_UNESCAPED_UNICODE);
     exit;
-  }
-
-  // ถ้าเป็นการรับงาน (assign -> preparing) ต้องมีวันที่
-  if ($status === 'preparing') {
-    if (empty($startDate) || empty($expectedEndDate)) {
-      http_response_code(400);
-      echo json_encode(['success'=>false,'message'=>'กรุณาระบุวันเริ่มงานและวันคาดว่าจะเสร็จ'], JSON_UNESCAPED_UNICODE);
-      exit;
-    }
   }
 
   $pdo = Database::getConnection();
 
-  // ตรวจว่าเป็นงานของช่างคนนี้
-  $chk = $pdo->prepare("SELECT tk_id FROM task WHERE tk_id = :id AND user_id = :uid LIMIT 1");
-  $chk->execute([':id'=>$tk_id, ':uid'=>$uid]);
-  if (!$chk->fetch()) {
+  // ยืนยันว่าเป็นงานของช่างคนนี้
+  $stm = $pdo->prepare("SELECT user_id FROM task WHERE tk_id = :id LIMIT 1");
+  $stm->execute([':id' => $tk_id]);
+  $task = $stm->fetch(PDO::FETCH_ASSOC);
+  if (!$task || (int)$task['user_id'] !== $uid) {
     http_response_code(403);
-    echo json_encode(['success'=>false,'message'=>'Forbidden'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success'=>false,'message'=>'Access denied or Task not found'], JSON_UNESCAPED_UNICODE);
     exit;
   }
 
-  $pdo->beginTransaction();
+  // 1) อัปเดตสถานะหลัก
+  $pdo->prepare("UPDATE task SET tk_status = :s WHERE tk_id = :id")
+      ->execute([':s' => $status, ':id' => $tk_id]);
 
-  // update task
-  $upd = $pdo->prepare("UPDATE task SET tk_status = :s WHERE tk_id = :id");
-  $upd->execute([':s'=>$status, ':id'=>$tk_id]);
+  // 2) เครื่องมือ (รับคีย์ tool_id, tool_name, qty, cost)
+  if ($toolsJson) {
+    $toolsData = json_decode($toolsJson, true) ?: [];
 
-  // ถ้าเป็น preparing ให้อัปเดตวันที่ด้วย
-  if ($status === 'preparing') {
-    $dateUpd = $pdo->prepare("UPDATE task SET start_date = :sd, expected_end_date = :ed WHERE tk_id = :id");
-    $dateUpd->execute([
-      ':sd' => $startDate,
-      ':ed' => $expectedEndDate,
-      ':id' => $tk_id
-    ]);
+    $pdo->prepare("DELETE FROM task_tools WHERE tk_id = :tk AND status = :st")
+        ->execute([':tk' => $tk_id, ':st' => $status]);
+
+    if (!empty($toolsData)) {
+      $ins = $pdo->prepare("
+        INSERT INTO task_tools (tk_id, tool_id, name, amount, cost, status, total_cost)
+        VALUES (:tk, :tool_id, :name, :amount, :cost, :status, :total_cost)
+      ");
+      foreach ($toolsData as $t) {
+        $amount = (int)($t['qty'] ?? 1);
+        $cost   = (float)($t['cost'] ?? 0);
+        $ins->execute([
+          ':tk'        => $tk_id,
+          ':tool_id'   => (int)($t['tool_id'] ?? 0),
+          ':name'      => (string)($t['tool_name'] ?? ''),
+          ':amount'    => $amount,
+          ':cost'      => $cost,
+          ':status'    => $status,
+          ':total_cost'=> $amount * $cost,
+        ]);
+      }
+    }
   }
 
-  // แนบไฟล์ถ้ามี
+  // 3) แนบไฟล์ (ถ้ามี)
   $fileUrl = null;
   if (!empty($_FILES['file']) && is_uploaded_file($_FILES['file']['tmp_name'])) {
     $name = date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '_' . basename($_FILES['file']['name']);
@@ -92,24 +98,21 @@ try {
     }
   }
 
-  // insert log ด้วยค่าสถานะเดียวกัน
-  $ins = $pdo->prepare("
+  // 4) log การอัปเดต
+  $pdo->prepare("
     INSERT INTO task_status (tk_id, status, time, detail, tk_status_tool, tk_img, section)
-    VALUES (:tk_id, :status, NOW(), :detail, :tool, NULL, 'progress')
-  ");
-  $ins->execute([
-    ':tk_id'  => $tk_id,
-    ':status' => $status,
-    ':detail' => $detail,
-    ':tool'   => $fileUrl,
+    VALUES (:tk, :st, NOW(), :detail, :tool_cost, :file_url, 'status_update')
+  ")->execute([
+    ':tk'        => $tk_id,
+    ':st'        => $status,
+    ':detail'    => $detail,
+    ':tool_cost' => $toolsTotalCost,
+    ':file_url'  => $fileUrl,
   ]);
 
-  $pdo->commit();
+  echo json_encode(['success'=>true,'message'=>'Task status updated successfully.'], JSON_UNESCAPED_UNICODE);
 
-  echo json_encode(['success'=>true], JSON_UNESCAPED_UNICODE);
-
-} catch (Throwable $e) {
-  if (isset($pdo) && $pdo->inTransaction()) $pdo->rollBack();
-  http_response_code(400);
-  echo json_encode(['success'=>false,'message'=>$e->getMessage()], JSON_UNESCAPED_UNICODE);
+} catch (Exception $e) {
+  http_response_code(500);
+  echo json_encode(['success'=>false,'message'=>'An error occurred: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }

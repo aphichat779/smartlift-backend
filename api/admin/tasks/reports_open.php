@@ -4,24 +4,15 @@ require_once __DIR__ . '/../../../middleware/CORSMiddleware.php';
 handleCORS();
 require_once __DIR__ . '/../../../config/database.php';
 require_once __DIR__ . '/../../../middleware/AuthMiddleware.php';
-require_once __DIR__ . '/../../../utils/JWTHelper.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
 try {
-    // เปลี่ยนจาก ['admin'] เป็น ['super_admin', 'admin', 'technician']
     $user = requireAuth(['super_admin', 'admin', 'technician']);
-    
     $pdo = Database::getConnection();
-    
-    // ตรวจสอบบทบาท
-    $role = $user['role'] ?? '';
-    $isAdmin = ($role === 'admin');
-    $isSuperAdmin = ($role === 'super_admin');
-    $isTechnician = ($role === 'technician');
 
     $date = $_GET['date'] ?? null; // 'YYYY-MM-DD'
-    $q    = $_GET['q'] ?? null;
+    $q    = $_GET['q']    ?? null;
 
     $where = [];
     $args  = [];
@@ -35,15 +26,28 @@ try {
         $args[':q'] = "%$q%";
     }
 
-    // admin, super_admin, technician ดูได้ทุกรายงาน (ไม่จำกัด org)
     $sql = "SELECT r.rp_id, r.date_rp, r.user_id, r.org_id, r.building_id, r.lift_id, r.detail,
                    o.org_name, b.building_name, l.lift_name,
-                   (SELECT COUNT(*) FROM task t WHERE t.rp_id = r.rp_id) AS assigned_count
+                   (SELECT COUNT(*) FROM task t WHERE t.rp_id = r.rp_id) AS assigned_count,
+                   /* ล่าสุด: วันเริ่มงาน (date), ผู้มอบหมาย, และชื่อช่างที่ได้รับมอบ */
+                   (SELECT DATE(t.task_start_date)
+                      FROM task t
+                     WHERE t.rp_id = r.rp_id
+                  ORDER BY t.tk_id DESC LIMIT 1) AS start_date,
+                   (SELECT t.assigned_by
+                      FROM task t
+                     WHERE t.rp_id = r.rp_id
+                  ORDER BY t.tk_id DESC LIMIT 1) AS assigned_by,
+                   (SELECT CONCAT(u.first_name,' ',u.last_name,' (',u.username,')')
+                      FROM task t
+                 LEFT JOIN users u ON u.id = t.user_id
+                     WHERE t.rp_id = r.rp_id
+                  ORDER BY t.tk_id DESC LIMIT 1) AS assigned_tech_name
             FROM report r
-            LEFT JOIN organizations o ON o.id = r.org_id
-            LEFT JOIN buildings b ON b.id = r.building_id
-            LEFT JOIN lifts l ON l.id = r.lift_id";
-            
+       LEFT JOIN organizations o ON o.id = r.org_id
+       LEFT JOIN buildings b     ON b.id = r.building_id
+       LEFT JOIN lifts l         ON l.id = r.lift_id";
+
     if ($where) $sql .= " WHERE " . implode(' AND ', $where);
     $sql .= " ORDER BY r.rp_id DESC LIMIT 200";
 

@@ -6,6 +6,9 @@ RewriteRule ^api/dashboard/dashboard/?$ api/dashboard/dashboard.php [L,QSA]
 
 RewriteRule ^api/auth/register/?$ api/auth/register.php [L,QSA]
 RewriteRule ^api/auth/login/?$ api/auth/login.php [L,QSA]
+RewriteRule ^api/auth/reset-complete/?$ api/auth/reset-complete.php [L,QSA]
+RewriteRule ^api/auth/reset-request/?$ api/auth/reset-request.php [L,QSA]
+RewriteRule ^api/auth/reset-verify/?$ api/auth/reset-verify.php [L,QSA]
 
 RewriteRule ^api/2fa/setup/?$ api/2fa/setup.php [L,QSA]
 RewriteRule ^api/2fa/verify-setup/?$ api/2fa/verify-setup.php [L,QSA]

@@ -20,7 +20,7 @@ define('MAX_LOGIN_ATTEMPTS', 5);
 define('LOCKOUT_TIME', 900); // 15 minutes
 
 // CORS Configuration
-define('ALLOWED_ORIGINS', ['http://localhost:3000', 'http://localhost:5173', 'http://172.20.10.4:5173', 'http://172.20.10.4']);
+define('ALLOWED_ORIGINS', ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://172.20.10.4:5173', 'http://172.20.10.4']);
 
 // Email Configuration (for OTP)
 define('SMTP_HOST', 'smtp.gmail.com');

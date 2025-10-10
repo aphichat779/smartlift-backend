@@ -4,64 +4,37 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../middleware/CORSMiddleware.php';
-require_once __DIR__ . '/../../middleware/AuthMiddleware.php';
 
 CORSMiddleware::handle();
 header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: no-cache, must-revalidate'); // ใช้ ETag เป็นตัวตัดสิน
+// กัน browser/proxy cache เก่า แต่ให้ใช้ ETag เป็นตัวตัดสิน
+header('Cache-Control: no-cache, must-revalidate');
 
 try {
-  $user  = AuthMiddleware::authenticateFromRequest();
   $db    = Database::getConnection();
   $redis = RedisClient::getConnection();
 
-  // ===== กำหนด scope ตาม role/org =====
-  list($where, $wparams) = AuthMiddleware::requireOrgScope($user);
-
-  // ===== อ่านตัวกรอง id/ids (จะถูก intersect กับ scope ภายหลัง) =====
-  $ids = [];
-  if (isset($_GET['id'])) {
-    $ids = [trim((string)$_GET['id'])];
-  } elseif (isset($_GET['ids'])) {
-    $ids = array_filter(array_map('trim', explode(',', (string)$_GET['ids'])));
-  }
-
-  // ===== Query meta พร้อม WHERE scope + ids =====
-  $sql = "SELECT l.id, l.lift_name, l.max_level, l.floor_name,
-                 o.org_name, b.building_name
-          FROM lifts l
-          LEFT JOIN organizations o ON l.org_id = o.id
-          LEFT JOIN buildings b     ON l.building_id = b.id";
-
-  $params = $wparams ?? [];
-  $conds  = [];
-  if ($where) $conds[] = $where;
-
-  if ($ids) {
-    $ph = [];
-    foreach ($ids as $i => $v) { $ph[] = ":id{$i}"; $params[":id{$i}"] = (int)$v; }
-    $conds[] = 'l.id IN ('.implode(',', $ph).')';
-  }
-
-  if ($conds) $sql .= ' WHERE ' . implode(' AND ', $conds);
-
-  $stmt = $db->prepare($sql);
-  $stmt->execute($params);
+  // โหลด meta ลิฟต์จาก DB
+  $stmt = $db->query("SELECT l.id, l.lift_name, l.max_level, l.floor_name,
+                             o.org_name, b.building_name
+                      FROM lifts l
+                      LEFT JOIN organizations o ON l.org_id = o.id
+                      LEFT JOIN buildings b     ON l.building_id = b.id");
   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-  // เก็บคีย์เป็นสตริง
+  // เก็บคีย์เป็นสตริงล้วน
   $metaById = [];
   foreach ($rows as $r) {
     $metaById[(string)$r['id']] = $r;
   }
 
-  // เลือก id ที่ต้องดึง (เฉพาะที่อยู่ใน scope)
+  // เลือก id ที่ต้องดึง (คีย์เป็นสตริง)
   $idsToFetch = array_keys($metaById);
   if (isset($_GET['id'])) {
-    $ask = trim((string)$_GET['id']);
+    $ask = trim((string)$_GET['id']);            // string
     $idsToFetch = array_values(array_intersect($idsToFetch, [$ask]));
   } elseif (isset($_GET['ids'])) {
-    $ask = array_filter(array_map('trim', explode(',', (string)$_GET['ids'])));
+    $ask = array_filter(array_map('trim', explode(',', (string)$_GET['ids']))); // string[]
     $idsToFetch = array_values(array_intersect($idsToFetch, $ask));
   }
 
@@ -81,33 +54,37 @@ try {
   }
 
   foreach ($idsToFetch as $id) {
-    $idStr = (string)$id;
+    $idStr = (string)$id;                  // ✅ ใช้สตริงเสมอ
     $meta  = $metaById[$idStr] ?? null;
     if (!$meta) continue;
 
-    $key = 'Lift-' . str_pad($idStr, 4, '0', STR_PAD_LEFT);
+    $key = 'Lift-' . str_pad($idStr, 4, '0', STR_PAD_LEFT); // ✅ คีย์มาตรฐาน
     if ($debug) $result['_debug']['keys'][] = $key;
 
-    $list = $redis->lRange($key, 0, 8); // index 0..8
+    // list index 0..8 (9 ช่อง)
+    $list = $redis->lRange($key, 0, 8);
     $result['lifts'][$idStr] = mapFromRedisList($meta, is_array($list) ? $list : []);
   }
 
-  // ===== ETag / If-None-Match =====
+  // ====== ⬇⬇⬇ เพิ่ม ETag/If-None-Match เพื่อลดทราฟฟิก (ทางเลือก A) ⬇⬇⬇ ======
   $payload = json_encode(
     $result,
     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
   );
+
+  // ใช้ hash จาก payload (หรือจะผสมเวลาจาก Redis ก็ได้)
   $etag = '"' . md5($payload) . '"';
   header('ETag: ' . $etag);
 
+  // ถ้า client ส่ง If-None-Match ตรงกับ ETag เดิม → ตอบ 304 ไม่มี body
   $ifNoneMatch = $_SERVER['HTTP_IF_NONE_MATCH'] ?? '';
   if ($ifNoneMatch === $etag) {
     http_response_code(304);
     exit;
   }
+  // ====== ⬆⬆⬆ END: ETag/304 logic ⬆⬆⬆ ======
 
   echo $payload;
-
 } catch (Throwable $e) {
   http_response_code(200);
   echo json_encode([
@@ -119,7 +96,7 @@ try {
   ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
 }
 
-/* ===== helper ===== */
+// ===== helper =====
 function mapFromRedisList(array $meta, array $list): array {
   if (count($list) < 9) {
     return [
@@ -146,7 +123,9 @@ function mapFromRedisList(array $meta, array $list): array {
       $date = new DateTimeImmutable($lastUpdate);
       $diff = $now->getTimestamp() - $date->getTimestamp();
       $online = ($diff <= 30) ? 'ONLINE' : 'OFFLINE';
-    } catch (Throwable $e) { $online = 'OFFLINE'; }
+    } catch (Throwable $e) {
+      $online = 'OFFLINE';
+    }
   }
 
   return [
